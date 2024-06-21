@@ -1,0 +1,16 @@
+
+# Python / environments / tests / databases
+.cache
+.pytest_cache/
+.data/
+.idea/
+__pycache__/
+env
+.env
+.venv
+.vscode/
+*Zone.Identifier
+
+# Private files
+OLD/
+testowy.py
