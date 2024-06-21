@@ -1,5 +1,5 @@
 import json
-from ...config import JSON_DATABASE_NAME
+from ...config import DEV_DATABASE_NAME
 
 
 class JsonFileDatabaseConnector:
@@ -8,7 +8,7 @@ class JsonFileDatabaseConnector:
 
     @staticmethod
     def _read_data() -> dict:
-        with open(JSON_DATABASE_NAME, "r") as file:
+        with open(DEV_DATABASE_NAME, "r") as file:
             return json.load(file)
 
     def save(self, entity: ...) -> int:
