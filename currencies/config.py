@@ -5,6 +5,3 @@ ENV_STATE = "prod"
 
 PROD_DATABASE_NAME = "currencies.db"
 DEV_DATABASE_NAME = "database.json"
-
-PROD_DATABASE_URL = "sqlite:///currencies.db"
-DEV_DATABASE_URL = "tests/database.json"
