@@ -1,3 +1,12 @@
+class CurrencyDataIntegrityError(Exception):
+    def __init__(self):
+        message = (
+            "IntegrityError: UNIQUE constraint failed: "
+            "a record with the same parameters already exists in the database."
+        )
+        super().__init__(message)
+
+
 class CurrencyNotFoundError(Exception):
     """Exception raised when a currency is not found in the database or API."""
 

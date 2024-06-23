@@ -14,8 +14,8 @@ class Config:
     )  # Default to 'dev' if ENV_STATE is not set
 
     if ENV_STATE == "prod":
-        DATABASE_URL = "sqlite:///database.sqlite3"
+        DATABASE_URL = os.environ.get("DATABASE_URL_FOR_PROD")
     elif ENV_STATE == "dev":
-        DATABASE_URL = "database.json"
+        DATABASE_URL = os.environ.get("DATABASE_URL_FOR_DEV")
     else:
         raise ValueError(f"Unsupported environment state: {ENV_STATE}")

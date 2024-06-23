@@ -1,11 +1,15 @@
+import os
+
+from dotenv import load_dotenv
 from sqlalchemy import Column, Date, Float, Index, Integer, String, create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from .config import Config
+load_dotenv()
 
 # Setting the database engine with a .sqlite3 file
 engine = create_engine(
-    url=str(Config.DATABASE_URL), connect_args={"check_same_thread": False}
+    url=str(os.environ.get("DATABASE_URL_FOR_PROD")),
+    connect_args={"check_same_thread": False},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -15,6 +15,13 @@ class JsonFileDatabaseConnector:
 
     Attributes:
     - _data (dict): The in-memory representation of the database.
+
+    Methods:
+    - _read_data: Reads data from the JSON file.
+    - _write_data: Writes the current state of the in-memory database (_data) to the JSON file.
+    - save: Saves a new entity to the JSON file database.
+    - get_all: Retrieves all entities from the JSON file database.
+    - get_by_id: Retrieves an entity by its ID.
     """
 
     def __init__(self) -> None:
@@ -58,13 +65,13 @@ class JsonFileDatabaseConnector:
             logger.error("Error writing data to %s: %s", Config.DATABASE_URL, e)
             raise
 
-    def save(self, entity: dict | ConvertedPricePLN) -> int:
+    def save(self, entity: ConvertedPricePLN) -> int:
         """
         Saves a new entity to the JSON file database.
 
         Args:
-        - entity (dict[str, Any] | ConvertedPricePLN): The entity to save.
-          Can be a dictionary or an instance of ConvertedPricePLN.
+        - entity (ConvertedPricePLN): An instance of ConvertedPricePLN to save
+          in the database.
 
         Returns:
         - int: The ID of the saved entity.
@@ -83,14 +90,8 @@ class JsonFileDatabaseConnector:
                 "price_in_pln": entity.price_in_pln,
                 "date": entity.currency_rate_fetch_date,
             }
-        elif isinstance(entity, dict):
-            required_keys = {"currency", "rate", "price_in_pln", "date"}
-            if not required_keys.issubset(entity):
-                raise ValueError(
-                    f"Entity dictionary must contain keys: {required_keys}"
-                )
         else:
-            raise TypeError("Entity must be a dict or ConvertedPricePLN instance")
+            raise TypeError("Entity must be a ConvertedPricePLN instance")
 
         ordered_entity = OrderedDict([("id", int(new_id))] + list(entity.items()))
 

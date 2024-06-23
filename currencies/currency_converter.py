@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import httpx
 
+from .config import Config
 from .connectors.local.file_reader import CurrencyRatesDatabaseConnector
 from .enums import CurrencySource, NbpWebApiUrl
 from .exceptions import CurrencyNotFoundError
@@ -18,9 +19,6 @@ class ConvertedPricePLN:
     currency_rate: float
     currency_rate_fetch_date: str
     price_in_pln: float
-
-    def save_to_database():
-        pass  # OKODOWAĆ z użyciem Connectora i zapisać przy init - doczytać jak to zrobić dla dataclass
 
 
 class PriceCurrencyConverterToPLN:
@@ -128,4 +126,20 @@ class PriceCurrencyConverterToPLN:
             "price_in_pln": round(price * rate, 2),
             "currency_rate_fetch_date": date,
         }
-        return ConvertedPricePLN(**result)
+
+        entity = ConvertedPricePLN(**result)
+        self._save_to_database(entity)
+
+        return entity
+
+    def _save_to_database(self, entity: ConvertedPricePLN) -> None:
+        if Config.ENV_STATE == "prod":
+            from .connectors.database.sqlite import SQLiteDatabaseConnector  # noqa
+
+            connector = SQLiteDatabaseConnector()
+        if Config.ENV_STATE == "dev":
+            from .connectors.database.json import JsonFileDatabaseConnector  # noqa
+
+            connector = JsonFileDatabaseConnector()
+
+        connector.save(entity)
