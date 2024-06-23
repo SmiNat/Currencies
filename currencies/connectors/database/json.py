@@ -3,7 +3,7 @@ import logging
 import os
 from collections import OrderedDict
 
-from ...config import DEV_DATABASE_NAME
+from ...config import Config
 from ...currency_converter import ConvertedPricePLN
 
 logger = logging.getLogger(__name__)
@@ -32,13 +32,13 @@ class JsonFileDatabaseConnector:
         - dict[str, Any]: The data read from the JSON file. Returns an empty
           dictionary if the file does not exist or an error occurs.
         """
-        if not os.path.exists(DEV_DATABASE_NAME):
+        if not os.path.exists(Config.DATABASE_URL):
             logger.error(
-                "FileNotFoundError: unable to locate file: %s", {DEV_DATABASE_NAME}
+                "FileNotFoundError: unable to locate file: %s", {Config.DATABASE_URL}
             )
             return {}
         try:
-            with open(DEV_DATABASE_NAME, "r") as file:
+            with open(Config.DATABASE_URL, "r") as file:
                 return json.load(file)
         except (json.JSONDecodeError, IOError) as e:
             logger.error("Error reading data: %s", {e})
@@ -52,10 +52,10 @@ class JsonFileDatabaseConnector:
         - IOError: If an error occurs while writing data to the JSON file
         """
         try:
-            with open(DEV_DATABASE_NAME, "w") as file:
+            with open(Config.DATABASE_URL, "w") as file:
                 json.dump(self._data, file, indent=4)
         except IOError as e:
-            logger.error("Error writing data to %s: %s", DEV_DATABASE_NAME, e)
+            logger.error("Error writing data to %s: %s", Config.DATABASE_URL, e)
             raise
 
     def save(self, entity: dict | ConvertedPricePLN) -> int:

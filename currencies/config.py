@@ -1,7 +1,21 @@
 """Depending on the purpose of using the application, change ENV_STATE variable
 in the .env file to either 'prod' or 'dev' (test environment)."""
 
-ENV_STATE = "prod"
+import os
 
-PROD_DATABASE_NAME = "currencies.db"
-DEV_DATABASE_NAME = "database.json"
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+class Config:
+    ENV_STATE = os.environ.get(
+        "ENV_STATE", "dev"
+    )  # Default to 'dev' if ENV_STATE is not set
+
+    if ENV_STATE == "prod":
+        DATABASE_URL = "sqlite:///database.sqlite3"
+    elif ENV_STATE == "dev":
+        DATABASE_URL = "database.json"
+    else:
+        raise ValueError(f"Unsupported environment state: {ENV_STATE}")

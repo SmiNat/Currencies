@@ -5,11 +5,14 @@ class LocalDatabaseUrl(str, Enum):
     """Enum for specifying directory of local databases."""
 
     PROD_DATABASE_URL = (
-        "sqlite:///currencies.db"  # move to config.py file with basic config rules
+        "sqlite:///database.sqlite3"  # move to config.py file with basic config rules
     )
     DEV_DATABASE_URL = (
         "tests/database.json"  # move to config.py file with basic config rules
     )
+
+    PROD_DATABASE_NAME = "database.sqlite3"
+    DEV_DATABASE_NAME = "database.json"
 
     CURRENCY_RATES_URL = "example_currency_rates.json"
 
