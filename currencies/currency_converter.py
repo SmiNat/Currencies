@@ -1,10 +1,10 @@
 import asyncio
-import json
 from dataclasses import dataclass
 
 import httpx
 
-from .enums import CurrencySource, LocalDatabaseUrl, NbpWebApiUrl
+from .connectors.local.file_reader import CurrencyRatesDatabaseConnector
+from .enums import CurrencySource, NbpWebApiUrl
 from .exceptions import CurrencyNotFoundError
 from .utils import validate_data_source
 
@@ -42,6 +42,21 @@ class PriceCurrencyConverterToPLN:
       Raises ValueError if database source is invalid.
     """
 
+    def __init__(self) -> None:
+        """
+        Initializes the PriceCurrencyConverterToPLN instance.
+
+        Usage:
+        eur_converter = PriceCurrencyConverterToPLN()
+        print(eur_converter.convert_to_pln("EUR", 100, "json file"))
+
+        Attributes:
+        - currency_connector (CurrencyRatesDatabaseConnector):
+          An instance of CurrencyRatesDatabaseConnector to fetch currency rate data
+          from a JSON file.
+        """
+        self.currency_connector = CurrencyRatesDatabaseConnector()
+
     async def fetch_single_currency_from_nbp(self, currency: str) -> tuple:
         """
         Fetches the exchange rate and date for a single currency from the NBP API.
@@ -78,14 +93,8 @@ class PriceCurrencyConverterToPLN:
         Raises:
         - CurrencyNotFound: If the currency is not found in the database.
         """
-        with open(LocalDatabaseUrl.CURRENCY_RATES_URL) as file:
-            data = json.load(file)
-        if currency.upper() not in list(data.keys()):
-            raise CurrencyNotFoundError(currency, list(data.keys()))
-
-        sorted_data = sorted(data[currency], key=lambda x: x["date"], reverse=True)
-        most_current = sorted_data[0]
-        return most_current["rate"], most_current["date"]
+        data = self.currency_connector.get_currency_latest_data(currency)
+        return data["rate"], data["date"]
 
     def convert_to_pln(
         self, currency: str, price: float, source: str

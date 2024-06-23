@@ -16,7 +16,7 @@ class CurrencyRatesDatabaseConnector:
     A connector class to retrieve currency rate data from a JSON file database.
 
     Attributes:
-        _data (dict): The in-memory representation of the database.
+    - _data (dict): The in-memory representation of the database.
     """
 
     def __init__(self) -> None:
@@ -31,8 +31,8 @@ class CurrencyRatesDatabaseConnector:
         Reads data from the JSON file specified by CURRENCY_RATES_URL.
 
         Returns:
-            dict: The data read from the JSON file. Returns an empty dictionary
-            if the file does not exist or an error occurs.
+        - dict: The data read from the JSON file. Returns an empty dictionary
+          if the file does not exist or an error occurs.
         """
         if not os.path.exists(LocalDatabaseUrl.CURRENCY_RATES_URL):
             logger.error(
@@ -52,7 +52,7 @@ class CurrencyRatesDatabaseConnector:
         Writes the current _data to the JSON file.
 
         Raises:
-            IOError: If an error occurs while writing data to the JSON file
+        - IOError: If an error occurs while writing data to the JSON file
         """
         try:
             with open(LocalDatabaseUrl.CURRENCY_RATES_URL, "w") as file:
@@ -68,39 +68,39 @@ class CurrencyRatesDatabaseConnector:
         Retrieves all currency rate data from the database.
 
         Returns:
-            dict[str, list[dict[str, Any]]]: A dictionary where keys are
-            currency codes (e.g., 'EUR', 'CZK') and values are lists of
-            dictionaries representing rate data.
+        - dict[str, list[dict[str, Any]]]: A dictionary where keys are currency
+          codes (e.g., 'EUR', 'CZK') and values are lists of dictionaries
+          representing rate data.
         """
         return self._data
 
-    def get_single_currency(self, currency: str) -> list:
+    def get_currency_data(self, currency: str) -> list:
         """
         Retrieves rate data for a single currency from the database.
 
         Args:
-            currency (str): The currency code to retrieve data for (case-insensitive).
+        - currency (str): The currency code to retrieve data for (case-insensitive).
 
         Returns:
-            list[dict[str, any]]: A list of dictionaries representing rate data
-            for the specified currency. Returns an empty list if the currency
-            code is not found.
+        - list[dict[str, any]]: A list of dictionaries representing rate data
+          for the specified currency. Returns an empty list if the currency
+          code is not found.
         """
         return self._data.get(currency.upper(), [])
 
-    def get_single_currency_latest_data(self, currency: str) -> dict:
+    def get_currency_latest_data(self, currency: str) -> dict:
         """
         Retrieves the latest rate data for a single currency from the database.
 
         Args:
-            currency (str): The currency code to retrieve data for (case-insensitive).
+        - currency (str): The currency code to retrieve data for (case-insensitive).
 
         Returns:
-            dict[str, Any]: A dictionary representing the latest rate data for
-            the specified currency, containing keys 'date' and 'rate'.
-            Returns an empty dictionary if no data is found.
+        - dict[str, Any]: A dictionary representing the latest rate data for
+          the specified currency, containing keys 'date' and 'rate'. Returns
+          an empty dictionary if no data is found.
         """
-        rates = self.get_single_currency(currency)
+        rates = self.get_currency_data(currency)
         if not rates:
             return {}
         sorted_data = sorted(rates, key=lambda x: x["date"], reverse=True)
@@ -115,16 +115,16 @@ class CurrencyRatesDatabaseConnector:
         It validates the currency code and rate data format before proceeding with the update.
 
         Args:
-            currency (str): The currency code (e.g., 'EUR') to add/update.
-            rate (dict[str, Any]): A dictionary representing rate data for
-            the currency. Must contain 'date' and 'rate' keys.
+        - currency (str): The currency code (e.g., 'EUR') to add/update.
+        - rate (dict[str, Any]): A dictionary representing rate data for
+          the currency. Must contain 'date' and 'rate' keys.
 
         Raises:
-            TypeError: If the provided currency code is not a string or is empty,
-            or if the rate data is not a dictionary or does not contain 'date'
-            and 'rate' keys.
-            CurrencyNotFoundError: If the specified currency code does not exist
-            in the database.
+        - TypeError: If the provided currency code is not a string or is empty,
+          or if the rate data is not a dictionary or does not contain 'date'
+          and 'rate' keys.
+        - CurrencyNotFoundError: If the specified currency code does not exist
+          in the database.
 
         Returns:
             None
@@ -159,10 +159,10 @@ class CurrencyRatesDatabaseConnector:
         Deletes rate data for a currency from the database.
 
         Args:
-            currency (str): The currency code to delete (e.g., 'EUR').
+        - currency (str): The currency code to delete (e.g., 'EUR').
 
         Returns:
-            str: A message indicating the result of the deletion operation.
+        - str: A message indicating the result of the deletion operation.
         """
         if currency.upper() in self._data:
             del self._data[currency.upper()]

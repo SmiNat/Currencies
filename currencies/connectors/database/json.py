@@ -14,7 +14,7 @@ class JsonFileDatabaseConnector:
     A connector class to retrieve and update data from a JSON file database.
 
     Attributes:
-        _data (dict): The in-memory representation of the database.
+    - _data (dict): The in-memory representation of the database.
     """
 
     def __init__(self) -> None:
@@ -29,8 +29,8 @@ class JsonFileDatabaseConnector:
         Reads data from the JSON file.
 
         Returns:
-            dict[str, Any]: The data read from the JSON file. Returns an empty
-            dictionary if the file does not exist or an error occurs.
+        - dict[str, Any]: The data read from the JSON file. Returns an empty
+          dictionary if the file does not exist or an error occurs.
         """
         if not os.path.exists(DEV_DATABASE_NAME):
             logger.error(
@@ -49,7 +49,7 @@ class JsonFileDatabaseConnector:
         Writes the current state of the in-memory database (_data) to the JSON file.
 
         Raises:
-            IOError: If an error occurs while writing data to the JSON file
+        - IOError: If an error occurs while writing data to the JSON file
         """
         try:
             with open(DEV_DATABASE_NAME, "w") as file:
@@ -63,16 +63,16 @@ class JsonFileDatabaseConnector:
         Saves a new entity to the JSON file database.
 
         Args:
-            entity (dict[str, Any] | ConvertedPricePLN): The entity to save.
-            Can be a dictionary or an instance of ConvertedPricePLN.
+        - entity (dict[str, Any] | ConvertedPricePLN): The entity to save.
+          Can be a dictionary or an instance of ConvertedPricePLN.
 
         Returns:
-            int: The ID of the saved entity.
+        - int: The ID of the saved entity.
 
         Raises:
-            ValueError: If the entity dictionary does not contain the required keys.
-            TypeError: If the entity is neither a dictionary nor an instance of ConvertedPricePLN.
-            IOError: If an error occurs while writing data to the JSON file.
+        - ValueError: If the entity dictionary does not contain the required keys.
+        - TypeError: If the entity is neither a dictionary nor an instance of ConvertedPricePLN.
+        - IOError: If an error occurs while writing data to the JSON file.
         """
         new_id = str(max(map(int, self._data.keys()), default=0) + 1)
 
@@ -104,7 +104,7 @@ class JsonFileDatabaseConnector:
         Retrieves all entities from the JSON file database.
 
         Returns:
-            list[dict[str, Any]]: A list of all entities in the database.
+        - list[dict[str, Any]]: A list of all entities in the database.
         """
         return list(self._data.values())
 
@@ -113,10 +113,10 @@ class JsonFileDatabaseConnector:
         Retrieves an entity by its ID.
 
         Args:
-            entity_id (int): The ID of the entity to retrieve.
+        - entity_id (int): The ID of the entity to retrieve.
 
         Returns:
-            [dict[str, Any] | None]: The entity with the specified ID,
-            or None if it does not exist.
+        - [dict[str, Any] | None]: The entity with the specified ID,
+          or None if it does not exist.
         """
         return self._data.get(str(entity_id), None)
