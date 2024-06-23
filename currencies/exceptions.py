@@ -1,4 +1,4 @@
-class CurrencyNotFound(Exception):
+class CurrencyNotFoundError(Exception):
     """Exception raised when a currency is not found in the database or API."""
 
     def __init__(
@@ -10,8 +10,5 @@ class CurrencyNotFound(Exception):
             else "Currency not found."
         )
         if available_currencies:
-            message += (
-                " Exchange rates available only for currencies: %s."
-                % available_currencies
-            )
+            message += " Available currencies: %s." % available_currencies
         super().__init__(message)

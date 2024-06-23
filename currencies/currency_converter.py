@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import httpx
 
 from .enums import CurrencySource, LocalDatabaseUrl, NbpWebApiUrl
-from .exceptions import CurrencyNotFound
+from .exceptions import CurrencyNotFoundError
 from .utils import validate_data_source
 
 
@@ -59,7 +59,7 @@ class PriceCurrencyConverterToPLN:
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
             if response.status_code == 404:
-                raise CurrencyNotFound(currency)
+                raise CurrencyNotFoundError(currency)
             data = response.json()["rates"][0]
             rate = data["mid"]
             date = data["effectiveDate"]
@@ -81,7 +81,7 @@ class PriceCurrencyConverterToPLN:
         with open(LocalDatabaseUrl.CURRENCY_RATES_URL) as file:
             data = json.load(file)
         if currency.upper() not in list(data.keys()):
-            raise CurrencyNotFound(currency, list(data.keys()))
+            raise CurrencyNotFoundError(currency, list(data.keys()))
 
         sorted_data = sorted(data[currency], key=lambda x: x["date"], reverse=True)
         most_current = sorted_data[0]
