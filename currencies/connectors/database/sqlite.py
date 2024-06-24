@@ -1,12 +1,13 @@
 import datetime
+import logging
 from contextlib import contextmanager
 
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ...currency_converter import ConvertedPricePLN
 from ...database_config import CurrencyData, SessionLocal
-from ...exceptions import CurrencyDataIntegrityError
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteDatabaseConnector:
@@ -32,18 +33,22 @@ class SQLiteDatabaseConnector:
         self.session = SessionLocal if not session else session
 
     @contextmanager
-    def _get_session(self):
+    def _get_session(self) -> Session:  # type: ignore
         """
         Provides a context manager for database sessions.
 
         Yields:
         - Session: A SQLAlchemy session.
+
+        Raises:
+        - Exception: If an error occurs while accessing the database.
         """
         session = self.session()
         try:
             yield session
-        except Exception:
-            session.rollback()
+        except Exception as e:
+            logger.error("Error with accessing the database: %s", {e})
+            # session.rollback()
             raise
         finally:
             session.close()
@@ -57,12 +62,38 @@ class SQLiteDatabaseConnector:
           to the database.
 
         Returns:
-        - int: The ID of the newly added currency data record.
+        - int: The ID of the newly added currency data record or already existing one.
+
+        Raises:
+        - TypeError: If the provided entity is not an instance of ConvertedPricePLN.
+        - Exception: If an unexpected error occurs while saving data to the database.
         """
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be a ConvertedPricePLN instance")
 
         with self._get_session() as session:
+            # Check if currency with the same data as data of the entity is
+            # already in the database
+            existing_record = (
+                session.query(CurrencyData)
+                .filter_by(
+                    currency=entity.currency,
+                    rate=entity.currency_rate,
+                    price_in_pln=entity.price_in_pln,
+                    date=datetime.datetime.strptime(
+                        entity.currency_rate_fetch_date, "%Y-%m-%d"
+                    ).date(),
+                )
+                .first()
+            )
+            if existing_record:
+                logger.debug(
+                    "A currency '%s' with given data already exists in the database.",
+                    entity.currency,
+                )
+                return existing_record.id
+
+            # Add a new record to the database
             new_data = CurrencyData(
                 currency=entity.currency,
                 rate=entity.currency_rate,
@@ -76,20 +107,39 @@ class SQLiteDatabaseConnector:
                 session.commit()
                 session.flush()  # Get the ID of the newly added record
                 return new_data.id
-            except IntegrityError:
-                raise CurrencyDataIntegrityError()
 
-    def get_all(self) -> list:
+            except Exception as e:
+                logger.error("Error while saving data to the database: %s", {e})
+                raise
+
+    def get_all(self) -> list[dict]:
         """
         Retrieves all currency data records from the database.
 
         Returns:
-        - list[ConvertedPricePLN]: A list of all currency data records.
+        - list[dict[str, Any]]: A list with currency data records.
+
+        Raises:
+        - Exception: If an error occurs while retrieving data from the database.
         """
         with self._get_session() as session:
-            return session.query(CurrencyData).all()
+            try:
+                records = session.query(CurrencyData).all()
+                return [
+                    {
+                        "id": record.id,
+                        "currency": record.currency,
+                        "rate": record.rate,
+                        "price_in_pln": record.price_in_pln,
+                        "date": record.date.strftime("%Y-%m-%d"),
+                    }
+                    for record in records
+                ]
+            except Exception as e:
+                logger.error("Error while retrieving data from the database: %s", e)
+                raise
 
-    def get_by_id(self, entity_id: int) -> CurrencyData:
+    def get_by_id(self, entity_id: int) -> dict | None:
         """
         Retrieves a specific currency data record by ID.
 
@@ -97,29 +147,57 @@ class SQLiteDatabaseConnector:
         - entity_id (int): The ID of the currency data record to retrieve.
 
         Returns:
-        - CurrencyData: The currency data record with the specified ID.
+        - [dict[str, Any] | None]: The currency data record with the specified ID,
+          or None if it does not exist.
+
+        Raises:
+        - Exception: If an error occurs while retrieving data from the database.
         """
         with self._get_session() as session:
-            return (
-                session.query(CurrencyData).filter(CurrencyData.id == entity_id).first()
-            )
+            try:
+                record = (
+                    session.query(CurrencyData)
+                    .filter(CurrencyData.id == entity_id)
+                    .first()
+                )
+                if record:
+                    record_as_dict = {
+                        col.name: getattr(record, col.name)
+                        for col in record.__table__.columns
+                    }
+                    record_as_dict["date"] = record_as_dict["date"].strftime("%Y-%m-%d")
+                    return record_as_dict
+
+                return None
+            except Exception as e:
+                logger.error("Error while retrieving data from the database: %s", e)
+                raise
 
     def delete_currency_data(self, entity_id: int) -> bool:
         """
-        Deletes a specific currency data record by ID.
+        Deletes a specific currency data record by its ID.
 
         Args:
         - entity_id (int): The ID of the currency data record to delete.
 
         Returns:
         - str: A message indicating the result of the deletion operation.
+
+        Raises:
+        - Exception: If an error occurs while deleting data from the database.
         """
         with self._get_session() as session:
-            data = (
-                session.query(CurrencyData).filter(CurrencyData.id == entity_id).first()
-            )
-            if data:
-                session.delete(data)
-                session.commit()
-                return f"Currency '{entity_id}' deleted from the database."
-            return "No currency to delete from the database."
+            try:
+                data = (
+                    session.query(CurrencyData)
+                    .filter(CurrencyData.id == entity_id)
+                    .first()
+                )
+                if data:
+                    session.delete(data)
+                    session.commit()
+                    return f"Currency '{entity_id}' deleted from the database."
+                return "No currency to delete from the database."
+            except Exception as e:
+                logger.error("Error while deleting data from the database: %s", e)
+                raise

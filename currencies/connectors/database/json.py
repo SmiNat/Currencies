@@ -11,22 +11,24 @@ logger = logging.getLogger(__name__)
 
 class JsonFileDatabaseConnector:
     """
-    A connector class to retrieve and update data from a JSON file database.
+    A connector class to retrieve and update data from a JSON database file.
 
     Attributes:
     - _data (dict): The in-memory representation of the database.
 
     Methods:
     - _read_data: Reads data from the JSON file.
-    - _write_data: Writes the current state of the in-memory database (_data) to the JSON file.
-    - save: Saves a new entity to the JSON file database.
-    - get_all: Retrieves all entities from the JSON file database.
+    - _write_data: Writes the current state of the in-memory database (_data)
+      to the JSON file.
+    - save: Saves a new entity to the JSON database file.
+    - get_all: Retrieves all entities from the JSON database file.
     - get_by_id: Retrieves an entity by its ID.
     """
 
     def __init__(self) -> None:
         """
-        Initializes the connector by reading data from the JSON file at the specified URL.
+        Initializes the connector by reading data from the JSON file at the
+        specified URL.
         """
         self._data = self._read_data()
 
@@ -56,7 +58,7 @@ class JsonFileDatabaseConnector:
         Writes the current state of the in-memory database (_data) to the JSON file.
 
         Raises:
-        - IOError: If an error occurs while writing data to the JSON file
+        - IOError: If an error occurs while writing data to the JSON file.
         """
         try:
             with open(Config.DATABASE_URL, "w") as file:
@@ -67,7 +69,7 @@ class JsonFileDatabaseConnector:
 
     def save(self, entity: ConvertedPricePLN) -> int:
         """
-        Saves a new entity to the JSON file database.
+        Saves a new entity to the JSON database file.
 
         Args:
         - entity (ConvertedPricePLN): An instance of ConvertedPricePLN to save
@@ -77,22 +79,31 @@ class JsonFileDatabaseConnector:
         - int: The ID of the saved entity.
 
         Raises:
-        - ValueError: If the entity dictionary does not contain the required keys.
-        - TypeError: If the entity is neither a dictionary nor an instance of ConvertedPricePLN.
+        - TypeError: If the entity is not an instance of ConvertedPricePLN.
         - IOError: If an error occurs while writing data to the JSON file.
+        - CurrencyDataIntegrityError: If the same record already exists in the database.
         """
+        if not isinstance(entity, ConvertedPricePLN):
+            raise TypeError("Entity must be of type ConvertedPricePLN.")
+
+        entity = {
+            "currency": entity.currency,
+            "rate": entity.currency_rate,
+            "price_in_pln": entity.price_in_pln,
+            "date": entity.currency_rate_fetch_date,
+        }
+
+        # Check if currency with given data is already in the database
+        for key, value in self._data.items():
+            if entity.items() <= value.items():
+                logger.debug(
+                    "A currency '%s' with given data already exists in the database.",
+                    entity["currency"],
+                )
+                return int(key)
+
+        # Add a new record to the database
         new_id = str(max(map(int, self._data.keys()), default=0) + 1)
-
-        if isinstance(entity, ConvertedPricePLN):
-            entity = {
-                "currency": entity.currency,
-                "rate": entity.currency_rate,
-                "price_in_pln": entity.price_in_pln,
-                "date": entity.currency_rate_fetch_date,
-            }
-        else:
-            raise TypeError("Entity must be a ConvertedPricePLN instance")
-
         ordered_entity = OrderedDict([("id", int(new_id))] + list(entity.items()))
 
         self._data[new_id] = dict(ordered_entity)

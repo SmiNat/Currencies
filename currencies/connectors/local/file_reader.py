@@ -2,11 +2,8 @@ import json
 import logging
 import os
 
-from currency_codes import exceptions, get_currency_by_code
-
 from ...enums import LocalDatabaseUrl
-from ...exceptions import CurrencyNotFoundError
-from ...utils import list_of_all_currency_codes
+from ...utils import validate_currency_input_data_for_json_database
 
 logger = logging.getLogger(__name__)
 
@@ -65,38 +62,40 @@ class CurrencyRatesDatabaseConnector:
 
     def get_all(self) -> dict:
         """
-        Retrieves all currency rate data from the database.
+        Retrieves all currency data from the database.
 
         Returns:
         - dict[str, list[dict[str, Any]]]: A dictionary where keys are currency
           codes (e.g., 'EUR', 'CZK') and values are lists of dictionaries
-          representing rate data.
+          with currency data.
         """
         return self._data
 
-    def get_currency_data(self, currency: str) -> list:
+    def get_currency_data(self, currency: str) -> list[dict]:
         """
-        Retrieves rate data for a single currency from the database.
+        Retrieves data for a single currency from the database.
 
         Args:
-        - currency (str): The currency code to retrieve data for (case-insensitive).
+        - currency (str): The currency code given in ISO 4217 currency codes
+          standard (e.g., 'USD') (case-insensitive).
 
         Returns:
-        - list[dict[str, any]]: A list of dictionaries representing rate data
-          for the specified currency. Returns an empty list if the currency
+        - list[dict[str, Any]]: A list of dictionaries representing data for
+          the specified currency. Returns an empty list if the currency
           code is not found.
         """
         return self._data.get(currency.upper(), [])
 
     def get_currency_latest_data(self, currency: str) -> dict:
         """
-        Retrieves the latest rate data for a single currency from the database.
+        Retrieves the latest rate for a single currency from the database.
 
         Args:
-        - currency (str): The currency code to retrieve data for (case-insensitive).
+        - currency (str): The currency code given in ISO 4217 currency codes
+          standard (e.g., 'USD') (case-insensitive).
 
         Returns:
-        - dict[str, Any]: A dictionary representing the latest rate data for
+        - dict[str, Any]: A dictionary representing the latest exchange rate for
           the specified currency, containing keys 'date' and 'rate'. Returns
           an empty dictionary if no data is found.
         """
@@ -106,57 +105,66 @@ class CurrencyRatesDatabaseConnector:
         sorted_data = sorted(rates, key=lambda x: x["date"], reverse=True)
         return sorted_data[0]
 
-    def add_currency_rate(self, currency: str, rate: dict) -> None:
+    def add_currency_data(self, currency: str, date: str, rate: float) -> None:
         """
-        Adds or updates rate data for a new currency in the database.
+        Adds or updates data for a new currency in the database.
 
-        This method adds or updates rate data for a specified currency in the database.
-        If the currency does not exist in the database, it raises a CurrencyNotFoundError.
-        It validates the currency code and rate data format before proceeding with the update.
+        This method adds or updates data for a specified currency in the database.
+        If the currency does not exist in the database, it adds the currency
+        with relevant data.
+        It validates the currency code and rate data format before proceeding
+        with the update.
 
         Args:
         - currency (str): The currency code (e.g., 'EUR') to add/update.
-        - rate (dict[str, Any]): A dictionary representing rate data for
-          the currency. Must contain 'date' and 'rate' keys.
+        - date (str): Date in 'YYYY-MM-DD' format (e.g., '2020-10-30')
+        - rate (float): Value of exchange rate.
 
         Raises:
-        - TypeError: If the provided currency code is not a string or is empty,
-          or if the rate data is not a dictionary or does not contain 'date'
-          and 'rate' keys.
+        - TypeError: If any of provided parameters has invalid data type.
         - CurrencyNotFoundError: If the specified currency code does not exist
-          in the database.
+          in allowed list of codes.
 
         Returns:
-            None
+            None.
         """
-        try:
-            get_currency_by_code(currency)
-        except exceptions.CurrencyNotFoundError:
-            raise CurrencyNotFoundError(currency, list_of_all_currency_codes())
+        validate_currency_input_data_for_json_database(currency, date, rate)
 
-        if not isinstance(currency, str) or not currency:
-            raise TypeError("Invalid currency code provided: %s", currency)
+        currency = currency.upper()
+        currency_data = {"date": date, "rate": rate}
 
-        if not isinstance(rate, dict) or set(["date", "rate"]) != set(rate.keys()):
-            raise TypeError("Invalid rates data provided for currency %s", currency)
+        # Check if currency with given rate and date is already in the database
+        if currency_data in self._data[currency]:
+            logger.debug(
+                "A currency '%s' with data '%s' already exists in the database.",
+                currency,
+                currency_data,
+            )
+            return
 
-        if currency.upper() in list(self._data.keys()):
-            if rate in self._data[currency.upper()]:
-                logger.debug(
-                    "A currency '%s' with data '%s' already exists in the database",
-                    currency,
-                    rate,
-                )
-            else:
-                self._data[currency.upper()].append(rate)
+        # If currency not yet in the database - add a new currency with given rate
+        # and date to the database
+        if currency not in list(code.upper() for code in self._data.keys()):
+            self._data[currency] = [currency_data]
+            self._write_data()
+            return
+
+        # Update currency data
+        # Add new data to existing currency if there was no data with given date
+        if not any(entry["date"] == date for entry in self._data[currency]):
+            self._data[currency].append(currency_data)
+        # Update exchange rate if currency already has data for the same date
         else:
-            self._data[currency.upper()] = [rate]
+            for entry in self._data[currency]:
+                if entry["date"] == date:
+                    entry["rate"] = rate
+                    break
 
         self._write_data()
 
     def delete_currency(self, currency: str) -> str:
         """
-        Deletes rate data for a currency from the database.
+        Deletes currency data from the database.
 
         Args:
         - currency (str): The currency code to delete (e.g., 'EUR').

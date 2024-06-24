@@ -23,17 +23,16 @@ class ConvertedPricePLN:
 
 class PriceCurrencyConverterToPLN:
     """
-    A class to convert prices from various currencies to PLN using either a JSON file or NBP API.
+    A class to convert prices from various currencies to PLN using either
+    a JSON file or NBP API.
 
     Methods:
     - fetch_single_currency_from_nbp(currency: str) -> tuple:
       Fetches the exchange rate and date for a single currency from the NBP API.
       Raises CurrencyNotFound if the currency is not found.
-
     - fetch_single_currency_from_database(currency: str) -> tuple:
       Fetches the exchange rate and date for a single currency from a JSON file.
       Raises CurrencyNotFound if the currency is not found.
-
     - convert_to_pln(*, currency: str, price: float, source: str) -> ConvertedPricePLN:
       Converts a price from a specified currency to PLN based on the given source.
       Validates the source and fetches data accordingly from JSON file or NBP API.
@@ -134,11 +133,11 @@ class PriceCurrencyConverterToPLN:
 
     def _save_to_database(self, entity: ConvertedPricePLN) -> None:
         if Config.ENV_STATE == "prod":
-            from .connectors.database.sqlite import SQLiteDatabaseConnector  # noqa
+            from .connectors.database.sqlite import SQLiteDatabaseConnector  # noqa E402
 
             connector = SQLiteDatabaseConnector()
         if Config.ENV_STATE == "dev":
-            from .connectors.database.json import JsonFileDatabaseConnector  # noqa
+            from .connectors.database.json import JsonFileDatabaseConnector  # noqa E402
 
             connector = JsonFileDatabaseConnector()
 

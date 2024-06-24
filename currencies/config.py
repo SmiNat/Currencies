@@ -14,8 +14,8 @@ class Config:
     )  # Default to 'dev' if ENV_STATE is not set
 
     if ENV_STATE == "prod":
-        DATABASE_URL = os.environ.get("DATABASE_URL_FOR_PROD")
+        DATABASE_URL = os.environ.get("PROD_DATABASE_URL")
     elif ENV_STATE == "dev":
-        DATABASE_URL = os.environ.get("DATABASE_URL_FOR_DEV")
+        DATABASE_URL = os.environ.get("DEV_DATABASE_URL")
     else:
         raise ValueError(f"Unsupported environment state: {ENV_STATE}")
