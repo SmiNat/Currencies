@@ -18,5 +18,19 @@
         "rate": 4.5,
         "price_in_pln": 20.0,
         "date": "2023-07-07"
+    },
+    "5": {
+        "id": 5,
+        "currency": "eur",
+        "rate": 4.2909,
+        "price_in_pln": 1716.36,
+        "date": "2024-06-25"
+    },
+    "6": {
+        "id": 6,
+        "currency": "chf",
+        "rate": 4.4732,
+        "price_in_pln": 1789.28,
+        "date": "2024-06-25"
     }
 }

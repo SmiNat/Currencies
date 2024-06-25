@@ -1,5 +1,5 @@
 
-# Python / environments / tests / databases
+# Python / environments / tests / databases / logs
 .cache
 .pytest_cache/
 .data/
@@ -11,6 +11,7 @@ env
 .vscode/
 *Zone.Identifier
 *.sqlite3
+*.log
 
 # Private files
 OLD/

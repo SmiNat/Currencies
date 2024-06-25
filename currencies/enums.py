@@ -11,7 +11,7 @@ class CurrencySource(str, Enum):
 class LocalDatabaseUrl(str, Enum):
     """Enum for specifying directory of local databases."""
 
-    CURRENCY_RATES_URL = "example_currency_rates.json"
+    CURRENCY_RATES_URL = "currency_rates.json"
 
 
 class NbpWebApiUrl(str, Enum):
