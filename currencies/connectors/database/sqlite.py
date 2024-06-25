@@ -8,7 +8,7 @@ from ...currency_converter import ConvertedPricePLN
 from ...database_config import CurrencyData, SessionLocal
 from ...utils import validate_currency_input_data
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("currencies")
 
 
 class SQLiteDatabaseConnector:

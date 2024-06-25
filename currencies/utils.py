@@ -51,7 +51,7 @@ def validate_currency_input_data(
     currency: str | None = None,
     date: str | None = None,
     rate: float | None = None,
-    price: float | None = None,
+    price: float | int | None = None,
 ):
     """
     Validate the currency input data.
@@ -88,7 +88,7 @@ def validate_currency_input_data(
         validate_date(date)
 
     if price:
-        if not isinstance(price, float):
+        if not isinstance(price, (float, int)):
             raise TypeError(
                 "Invalid data type for price variable. Required type: float."
             )

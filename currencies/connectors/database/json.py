@@ -7,7 +7,7 @@ from ...config import Config
 from ...currency_converter import ConvertedPricePLN
 from ...utils import validate_currency_input_data
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("currencies")
 
 
 class JsonFileDatabaseConnector:

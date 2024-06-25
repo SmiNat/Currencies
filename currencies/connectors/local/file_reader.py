@@ -5,7 +5,7 @@ import os
 from ...enums import LocalDatabaseUrl
 from ...utils import validate_currency_input_data
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("currencies")
 
 
 class CurrencyRatesDatabaseConnector:

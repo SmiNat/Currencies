@@ -1,4 +1,4 @@
-import asyncio
+import logging
 from dataclasses import dataclass
 
 import httpx
@@ -6,8 +6,9 @@ import httpx
 from .config import Config
 from .connectors.local.file_reader import CurrencyRatesDatabaseConnector
 from .enums import CurrencySource, NbpWebApiUrl
-from .exceptions import CurrencyNotFoundError
-from .utils import validate_data_source
+from .utils import validate_currency_input_data, validate_data_source
+
+logger = logging.getLogger("currencies")
 
 
 @dataclass(frozen=True)
@@ -38,7 +39,7 @@ class PriceCurrencyConverterToPLN:
         """
         self.currency_connector = CurrencyRatesDatabaseConnector()
 
-    async def fetch_single_currency_from_nbp(self, currency: str) -> tuple:
+    def fetch_single_currency_from_nbp(self, currency: str) -> tuple | str:
         """
         Fetches the exchange rate and date for a single currency from the NBP API.
 
@@ -46,19 +47,22 @@ class PriceCurrencyConverterToPLN:
         - currency (str): The currency code (e.g., 'USD', 'EUR').
 
         Returns:
-        - tuple: A tuple containing the exchange rate (float) and date (str).
+        - tuple: A tuple containing the exchange rate (float) and date (str) or
+          a string message if no data found in the NPB's database.
         """
         url = f"{NbpWebApiUrl.TABLE_A_SINGLE_CURRENCY}/{currency.lower()}/?format=json"
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
+        with httpx.Client() as client:
+            response = client.get(url)
             if response.status_code == 404:
-                raise CurrencyNotFoundError(currency)
+                logger.debug("No currency code '%s' in NBP's API." % currency)
+                return f"Currency with code '{currency}' was not found in the NPB's database."
+
             data = response.json()["rates"][0]
             rate = data["mid"]
             date = data["effectiveDate"]
             return rate, date
 
-    def fetch_single_currency_from_database(self, currency: str) -> tuple:
+    def fetch_single_currency_from_local_database(self, currency: str) -> tuple | str:
         """
         Fetches the exchange rate and date for a single currency from a JSON file.
 
@@ -66,9 +70,13 @@ class PriceCurrencyConverterToPLN:
         - currency (str): The currency code (e.g., 'USD', 'EUR').
 
         Returns:
-        - tuple: A tuple containing the exchange rate (float) and date (str).
+        - tuple | str: A tuple containing the exchange rate (float) and date (str)
+          or a string message if no data found in the database.
         """
         data = self.currency_connector.get_currency_latest_data(currency)
+        if not data:
+            logger.debug("No currency code '%s' in local database." % currency)
+            return f"No database record for currency '{currency}'."
         return data["rate"], data["date"]
 
     def convert_to_pln(
@@ -86,18 +94,12 @@ class PriceCurrencyConverterToPLN:
         - ConvertedPricePLN: An instance of ConvertedPricePLN containing converted data.
         """
         validate_data_source(source)
+        validate_currency_input_data(currency, price=price)
 
         if source.lower() == CurrencySource.JSON_FILE.value:
-            rate, date = self.fetch_single_currency_from_database(currency)
+            rate, date = self.fetch_single_currency_from_local_database(currency)
         elif source.lower() == CurrencySource.API_NBP.value:
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:  # No event loop is running
-                rate, date = asyncio.run(self.fetch_single_currency_from_nbp(currency))
-            else:
-                rate, date = loop.run_until_complete(
-                    self.fetch_single_currency_from_nbp(currency)
-                )
+            rate, date = self.fetch_single_currency_from_nbp(currency)
 
         result = {
             "price_in_source_currency": price,
