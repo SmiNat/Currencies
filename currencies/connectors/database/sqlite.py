@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from ...currency_converter import ConvertedPricePLN
 from ...database_config import CurrencyData, SessionLocal
+from ...utils import validate_currency_input_data
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,56 @@ class SQLiteDatabaseConnector:
                 logger.error("Error while retrieving data from the database: %s", e)
                 raise
 
-    def delete_currency_data(self, entity_id: int) -> bool:
+    def update(
+        self,
+        entity_id: int,
+        currency: str | None = None,
+        date: str | None = None,
+        rate: float | None = None,
+        price_in_pln: float | None = None,
+    ) -> str:
+        """
+        Updates the entity with the given id in the SQLite database.
+
+        Args:
+        - entity_id (int): The ID of the entity to update.
+        - currency (Optional[str]): The new currency code, if updating.
+        - rate (Optional[float]): The new exchange rate, if updating.
+        - price_in_pln (Optional[float]): The new price in PLN, if updating.
+        - date (Optional[str]): The new date, if updating.
+
+        Returns:
+        - str: A message indicating the result of the update operation.
+        """
+        with self._get_session() as session:
+            record = (
+                session.query(CurrencyData).filter(CurrencyData.id == entity_id).first()
+            )
+            if not record:
+                return f"No currency with id '{entity_id}' in the database."
+            logger.debug("Database record to update: %s" % record.__dict__)
+
+            validate_currency_input_data(currency, date, rate, price_in_pln)
+
+            record.currency = currency or record.currency
+            record.rate = rate or record.rate
+            record.price_in_pln = price_in_pln or record.price_in_pln
+            record.date = (
+                datetime.datetime.strptime(date, "%Y-%m-%d").date()
+                if date
+                else record.date
+            )
+
+            try:
+                session.commit()
+                session.refresh(record)
+                logger.debug("Database record after update: %s" % record.__dict__)
+                return f"Currency with id '{entity_id}' was successfully updated."
+            except Exception as e:
+                logger.error("Error while updating the record in the database: %s", e)
+                raise
+
+    def delete(self, entity_id: int) -> str:
         """
         Deletes a specific currency data record by its ID.
 
@@ -172,8 +222,8 @@ class SQLiteDatabaseConnector:
                 if data:
                     session.delete(data)
                     session.commit()
-                    return f"Currency '{entity_id}' deleted from the database."
-                return "No currency to delete from the database."
+                    return f"Currency with id '{entity_id}' deleted from the database."
+                return f"No currency with id '{entity_id}' to delete from the database."
             except Exception as e:
                 logger.error("Error while deleting data from the database: %s", e)
                 raise

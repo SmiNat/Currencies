@@ -3,7 +3,7 @@ import logging
 import os
 
 from ...enums import LocalDatabaseUrl
-from ...utils import validate_currency_input_data_for_json_database
+from ...utils import validate_currency_input_data
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class CurrencyRatesDatabaseConnector:
         Returns:
             None.
         """
-        validate_currency_input_data_for_json_database(currency, date, rate)
+        validate_currency_input_data(currency, date, rate)
 
         currency = currency.upper()
         currency_data = {"date": date, "rate": rate}

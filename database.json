@@ -12,5 +12,11 @@
         "rate": 4.985,
         "price_in_pln": 22.1,
         "date": "2012-01-01"
+    },
+    "4": {
+        "currency": "eur",
+        "rate": 4.5,
+        "price_in_pln": 20.0,
+        "date": "2023-07-07"
     }
 }

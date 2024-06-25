@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 from ...config import Config
 from ...currency_converter import ConvertedPricePLN
+from ...utils import validate_currency_input_data
 
 logger = logging.getLogger(__name__)
 
@@ -117,3 +118,64 @@ class JsonFileDatabaseConnector:
           or None if it does not exist.
         """
         return self._data.get(str(entity_id), None)
+
+    def update(
+        self,
+        entity_id: int,
+        currency: str | None = None,
+        rate: float | None = None,
+        price_in_pln: float | None = None,
+        date: str | None = None,
+    ) -> str:
+        """
+        Updates the entity with the given id in the JSON database.
+
+        Args:
+        - entity_id (int): The ID of the entity to update.
+        - currency (Optional[str]): The new currency code, if updating.
+        - rate (Optional[float]): The new exchange rate, if updating.
+        - price_in_pln (Optional[float]): The new price in PLN, if updating.
+        - date (Optional[str]): The new date, if updating.
+
+        Returns:
+        - str: A message indicating the result of the update operation.
+        """
+        entity = self._data.get(str(entity_id), None)
+        if not entity:
+            return f"No currency with id '{entity_id}' in the database."
+        logger.debug("Database record to update: %s" % entity)
+
+        validate_currency_input_data(currency, date, rate, price_in_pln)
+
+        updated_entity = {
+            "currency": currency or entity["currency"],
+            "rate": rate or entity["rate"],
+            "price_in_pln": price_in_pln or entity["price_in_pln"],
+            "date": date or entity["date"],
+        }
+
+        self._data[str(entity_id)] = updated_entity
+        self._write_data()
+        logger.debug("Database record after update: %s" % self._data[str(entity_id)])
+
+        return f"Currency with id '{entity_id}' was successfully updated."
+
+    def delete(self, entity_id: int) -> str:
+        """
+        Deletes a specific currency data record by its ID.
+
+        Args:
+        - entity_id (int): The ID of the currency data record to delete.
+
+        Returns:
+        - str: A message indicating the result of the deletion operation.
+        """
+        try:
+            del self._data[str(entity_id)]
+            self._write_data()
+            return f"Currency with id '{entity_id}' deleted from the database."
+        except KeyError:
+            return f"No currency with id '{entity_id}' to delete from the database."
+        except Exception as e:
+            logger.error("Error while deleting data from the database: %s", e)
+            raise
