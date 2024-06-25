@@ -1,24 +1,17 @@
 from enum import Enum
 
 
-class LocalDatabaseUrl(str, Enum):
-    """Enum for specifying directory of local databases."""
-
-    PROD_DATABASE_URL = (
-        "sqlite:///currencies.db"  # move to config.py file with basic config rules
-    )
-    DEV_DATABASE_URL = (
-        "tests/database.json"  # move to config.py file with basic config rules
-    )
-
-    CURRENCY_RATES_URL = "example_currency_rates.json"
-
-
 class CurrencySource(str, Enum):
     """Enum for specifying the source of currency data."""
 
     API_NBP = "api nbp"
     JSON_FILE = "json file"
+
+
+class LocalDatabaseUrl(str, Enum):
+    """Enum for specifying directory of local databases."""
+
+    CURRENCY_RATES_URL = "example_currency_rates.json"
 
 
 class NbpWebApiUrl(str, Enum):
