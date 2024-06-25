@@ -1,4 +1,9 @@
 class CurrencyDataIntegrityError(Exception):
+    """
+    Exception raised when an attempt to insert or update data violates
+    integrity constraints in the database.
+    """
+
     def __init__(self):
         message = (
             "IntegrityError: UNIQUE constraint failed: "
