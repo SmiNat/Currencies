@@ -9,16 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 class CurrencyRatesDatabaseConnector:
-    """
-    A connector class to retrieve currency rate data from a JSON file database.
-
-    Attributes:
-    - _data (dict): The in-memory representation of the database.
-    """
+    """A connector class to retrieve currency rate data from a JSON file database."""
 
     def __init__(self) -> None:
         """
-        Initializes the connector by reading data from the JSON file at the specified URL.
+        Initializes the connector by reading data from the JSON file at
+        the specified URL.
+
+        Attributes:
+        - _data (dict): The in-memory representation of the database.
         """
         self._data = self._read_data()
 
@@ -44,12 +43,12 @@ class CurrencyRatesDatabaseConnector:
             logger.error("Error reading data: %s", {e})
             return {}
 
-    def _write_data(self) -> bool:
+    def _write_data(self) -> None:
         """
         Writes the current _data to the JSON file.
 
-        Raises:
-        - IOError: If an error occurs while writing data to the JSON file
+        Returns:
+        - None.
         """
         try:
             with open(LocalDatabaseUrl.CURRENCY_RATES_URL, "w") as file:
@@ -119,11 +118,6 @@ class CurrencyRatesDatabaseConnector:
         - currency (str): The currency code (e.g., 'EUR') to add/update.
         - date (str): Date in 'YYYY-MM-DD' format (e.g., '2020-10-30')
         - rate (float): Value of exchange rate.
-
-        Raises:
-        - TypeError: If any of provided parameters has invalid data type.
-        - CurrencyNotFoundError: If the specified currency code does not exist
-          in allowed list of codes.
 
         Returns:
             None.

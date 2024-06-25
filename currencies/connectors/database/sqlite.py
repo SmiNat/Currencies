@@ -11,22 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class SQLiteDatabaseConnector:
-    """
-    A connector class to interact with the SQLite database.
-
-    Methods:
-    - _get_session: Provides a context manager for database sessions.
-    - save: Adds a new currency data record to the database.
-    - get_all: Retrieves all currency data records from the database.
-    - get_by_id: Retrieves a specific currency data record by ID.
-    - delete_currency_data: Deletes a specific currency data record by ID.
-    """
+    """A connector class to interact with the SQLite database."""
 
     def __init__(self, session: Session | None = None) -> None:
         """
-        Initializes the connector with the given session factory or the default SessionLocal.
+        Initializes the connector with the given session factory or the default
+        SessionLocal.
 
-        Args:
+        Attributes:
         - session (Session, optional): The session factory for creating database
           sessions. Defaults to SessionLocal if not provided.
         """
@@ -39,9 +31,6 @@ class SQLiteDatabaseConnector:
 
         Yields:
         - Session: A SQLAlchemy session.
-
-        Raises:
-        - Exception: If an error occurs while accessing the database.
         """
         session = self.session()
         try:
@@ -63,10 +52,6 @@ class SQLiteDatabaseConnector:
 
         Returns:
         - int: The ID of the newly added currency data record or already existing one.
-
-        Raises:
-        - TypeError: If the provided entity is not an instance of ConvertedPricePLN.
-        - Exception: If an unexpected error occurs while saving data to the database.
         """
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be a ConvertedPricePLN instance")
@@ -118,9 +103,6 @@ class SQLiteDatabaseConnector:
 
         Returns:
         - list[dict[str, Any]]: A list with currency data records.
-
-        Raises:
-        - Exception: If an error occurs while retrieving data from the database.
         """
         with self._get_session() as session:
             try:
@@ -149,9 +131,6 @@ class SQLiteDatabaseConnector:
         Returns:
         - [dict[str, Any] | None]: The currency data record with the specified ID,
           or None if it does not exist.
-
-        Raises:
-        - Exception: If an error occurs while retrieving data from the database.
         """
         with self._get_session() as session:
             try:
@@ -182,9 +161,6 @@ class SQLiteDatabaseConnector:
 
         Returns:
         - str: A message indicating the result of the deletion operation.
-
-        Raises:
-        - Exception: If an error occurs while deleting data from the database.
         """
         with self._get_session() as session:
             try:

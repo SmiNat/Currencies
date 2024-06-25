@@ -25,27 +25,11 @@ class PriceCurrencyConverterToPLN:
     """
     A class to convert prices from various currencies to PLN using either
     a JSON file or NBP API.
-
-    Methods:
-    - fetch_single_currency_from_nbp(currency: str) -> tuple:
-      Fetches the exchange rate and date for a single currency from the NBP API.
-      Raises CurrencyNotFound if the currency is not found.
-    - fetch_single_currency_from_database(currency: str) -> tuple:
-      Fetches the exchange rate and date for a single currency from a JSON file.
-      Raises CurrencyNotFound if the currency is not found.
-    - convert_to_pln(*, currency: str, price: float, source: str) -> ConvertedPricePLN:
-      Converts a price from a specified currency to PLN based on the given source.
-      Validates the source and fetches data accordingly from JSON file or NBP API.
-      Raises ValueError if database source is invalid.
     """
 
     def __init__(self) -> None:
         """
         Initializes the PriceCurrencyConverterToPLN instance.
-
-        Usage:
-        eur_converter = PriceCurrencyConverterToPLN()
-        print(eur_converter.convert_to_pln("EUR", 100, "json file"))
 
         Attributes:
         - currency_connector (CurrencyRatesDatabaseConnector):
@@ -63,9 +47,6 @@ class PriceCurrencyConverterToPLN:
 
         Returns:
         - tuple: A tuple containing the exchange rate (float) and date (str).
-
-        Raises:
-        - CurrencyNotFound: If the currency is not found in the API.
         """
         url = f"{NbpWebApiUrl.TABLE_A_SINGLE_CURRENCY}/{currency.lower()}/?format=json"
         async with httpx.AsyncClient() as client:
@@ -86,9 +67,6 @@ class PriceCurrencyConverterToPLN:
 
         Returns:
         - tuple: A tuple containing the exchange rate (float) and date (str).
-
-        Raises:
-        - CurrencyNotFound: If the currency is not found in the database.
         """
         data = self.currency_connector.get_currency_latest_data(currency)
         return data["rate"], data["date"]
@@ -106,17 +84,20 @@ class PriceCurrencyConverterToPLN:
 
         Returns:
         - ConvertedPricePLN: An instance of ConvertedPricePLN containing converted data.
-
-        Raises:
-        - ValueError: If an invalid data source is specified.
-        - CurrencyNotFound: If the currency is not found in the specified source.
         """
         validate_data_source(source)
 
         if source.lower() == CurrencySource.JSON_FILE.value:
             rate, date = self.fetch_single_currency_from_database(currency)
         elif source.lower() == CurrencySource.API_NBP.value:
-            rate, date = asyncio.run(self.fetch_single_currency_from_nbp(currency))
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:  # No event loop is running
+                rate, date = asyncio.run(self.fetch_single_currency_from_nbp(currency))
+            else:
+                rate, date = loop.run_until_complete(
+                    self.fetch_single_currency_from_nbp(currency)
+                )
 
         result = {
             "price_in_source_currency": price,
@@ -136,6 +117,7 @@ class PriceCurrencyConverterToPLN:
             from .connectors.database.sqlite import SQLiteDatabaseConnector  # noqa E402
 
             connector = SQLiteDatabaseConnector()
+
         if Config.ENV_STATE == "dev":
             from .connectors.database.json import JsonFileDatabaseConnector  # noqa E402
 

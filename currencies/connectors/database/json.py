@@ -10,25 +10,15 @@ logger = logging.getLogger(__name__)
 
 
 class JsonFileDatabaseConnector:
-    """
-    A connector class to retrieve and update data from a JSON database file.
-
-    Attributes:
-    - _data (dict): The in-memory representation of the database.
-
-    Methods:
-    - _read_data: Reads data from the JSON file.
-    - _write_data: Writes the current state of the in-memory database (_data)
-      to the JSON file.
-    - save: Saves a new entity to the JSON database file.
-    - get_all: Retrieves all entities from the JSON database file.
-    - get_by_id: Retrieves an entity by its ID.
-    """
+    """A connector class to retrieve and update data from a JSON database file."""
 
     def __init__(self) -> None:
         """
         Initializes the connector by reading data from the JSON file at the
         specified URL.
+
+        Attributes:
+        - _data (dict): The in-memory representation of the database.
         """
         self._data = self._read_data()
 
@@ -57,8 +47,8 @@ class JsonFileDatabaseConnector:
         """
         Writes the current state of the in-memory database (_data) to the JSON file.
 
-        Raises:
-        - IOError: If an error occurs while writing data to the JSON file.
+        Returns:
+        - None.
         """
         try:
             with open(Config.DATABASE_URL, "w") as file:
@@ -77,11 +67,6 @@ class JsonFileDatabaseConnector:
 
         Returns:
         - int: The ID of the saved entity.
-
-        Raises:
-        - TypeError: If the entity is not an instance of ConvertedPricePLN.
-        - IOError: If an error occurs while writing data to the JSON file.
-        - CurrencyDataIntegrityError: If the same record already exists in the database.
         """
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be of type ConvertedPricePLN.")
