@@ -6,6 +6,11 @@ from .enums import CurrencySource
 from .exceptions import CurrencyNotFoundError
 
 
+def get_available_data_sources():
+    """Returns a list of available data sources from the CurrencySource enum."""
+    return [src.value for src in CurrencySource]
+
+
 def validate_data_source(source: str) -> None:
     """
     Validate the data source value.
@@ -16,11 +21,10 @@ def validate_data_source(source: str) -> None:
     Raises:
     - ValueError: If the data source is not valid.
     """
-    available_sources = [src.value for src in CurrencySource]
+    available_sources = get_available_data_sources()
     if source.lower() not in available_sources:
         raise ValueError(
-            "Invalid data source specified. Available interest rates: %s."
-            % available_sources
+            "Invalid data source specified. Available sources: %s." % available_sources
         )
 
 
@@ -44,7 +48,7 @@ def validate_date(date: str) -> None:
                 "Invalid date format. Required format: 'YYYY-MM-DD' (e.g. 2020-12-30)."
             )
     else:
-        raise TypeError("Invalid data type for date variable. Required type: string.")
+        raise TypeError("Invalid data type for date attribute. Required type: string.")
 
 
 def validate_currency_input_data(
@@ -68,7 +72,7 @@ def validate_currency_input_data(
     if currency:
         if not isinstance(currency, str):
             raise TypeError(
-                "Invalid data type for currency variable. Required type: string."
+                "Invalid data type for currency attribute. Required type: string."
             )
 
         available_currencies = list_of_all_currency_codes()
@@ -81,7 +85,7 @@ def validate_currency_input_data(
     if rate:
         if not isinstance(rate, float):
             raise TypeError(
-                "Invalid data type for rate variable. Required type: float."
+                "Invalid data type for rate attribute. Required type: float."
             )
 
     if date:
@@ -90,7 +94,7 @@ def validate_currency_input_data(
     if price:
         if not isinstance(price, (float, int)):
             raise TypeError(
-                "Invalid data type for price variable. Required type: float."
+                "Invalid data type for price attribute. Required type: float or integer."
             )
 
 
