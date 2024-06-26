@@ -1,0 +1,9 @@
+{
+    "1": {
+        "id": 1,
+        "currency": "USD",
+        "rate": 4.2,
+        "price_in_pln": 42,
+        "date": "2024-06-30"
+    }
+}

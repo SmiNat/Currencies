@@ -86,7 +86,7 @@ class JsonFileDatabaseConnector:
                     "A currency '%s' with given data already exists in the database.",
                     entity["currency"],
                 )
-                return int(key)
+                return key
 
         # Add a new record to the database
         new_id = str(max(map(int, self._data.keys()), default=0) + 1)
@@ -148,6 +148,7 @@ class JsonFileDatabaseConnector:
         validate_currency_input_data(currency, date, rate, price_in_pln)
 
         updated_entity = {
+            "id": entity_id,
             "currency": currency or entity["currency"],
             "rate": rate or entity["rate"],
             "price_in_pln": price_in_pln or entity["price_in_pln"],
