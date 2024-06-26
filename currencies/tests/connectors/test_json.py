@@ -33,7 +33,7 @@ def test_read_data_file_not_found(caplog):
         )
 
 
-def test_read_data_json_decode_error(caplog, test_json_db):
+def test_read_data_json_decode_error(caplog):
     with patch("json.load", side_effect=json.JSONDecodeError("error message", "", 0)):
         connector = JsonFileDatabaseConnector()
         assert connector.get_all() == []

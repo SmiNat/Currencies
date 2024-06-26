@@ -130,22 +130,22 @@ def configure_logging() -> None:
                     "formatter": "console",
                 },
                 "files": {
-                    "class": "logging.handlers.RotatingFileHandler",
+                    "class": "logging.FileHandler",
                     "level": "DEBUG",
                     "formatter": "file",
                     "filename": "logs_rotating.log",
-                    "mode": "a",
-                    "maxBytes": 1024 * 512,  # 0.5MB
-                    "backupCount": 2,
                     "encoding": "utf-8",
                 },
                 "tests": {
-                    "class": "logging.FileHandler",
+                    "class": "logging.handlers.RotatingFileHandler",
                     "level": "DEBUG",
                     "formatter": "test",
                     "filename": os.path.join(
                         os.path.dirname(__file__), "tests", "logs_test.log"
                     ),
+                    "mode": "a",
+                    "maxBytes": 1024 * 512,  # 0.5MB
+                    "backupCount": 2,
                     "encoding": "utf-8",
                 },
             },

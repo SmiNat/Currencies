@@ -23,7 +23,7 @@ class SQLiteDatabaseConnector:
         - session (Session, optional): The session factory for creating database
           sessions. Defaults to SessionLocal if not provided.
         """
-        self.session = SessionLocal if not session else session
+        self.session = SessionLocal() if not session else session
 
     @contextmanager
     def _get_session(self) -> Session:  # type: ignore
@@ -33,7 +33,7 @@ class SQLiteDatabaseConnector:
         Yields:
         - Session: A SQLAlchemy session.
         """
-        session = self.session()
+        session = self.session
         try:
             yield session
         except Exception as e:
