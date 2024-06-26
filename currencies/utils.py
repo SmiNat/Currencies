@@ -2,7 +2,7 @@ import datetime
 
 from currency_codes import get_all_currencies
 
-from .enums import CurrencySource
+from .enums import CurrencySource, DatabaseMapping
 from .exceptions import CurrencyNotFoundError
 
 
@@ -101,3 +101,15 @@ def validate_currency_input_data(
 def list_of_all_currency_codes() -> list:
     """Returns list of all currency codes."""
     return [currency.code for currency in get_all_currencies() if currency.code]
+
+
+def validate_db_type(db_type: str) -> None:
+    if not isinstance(db_type, str):
+        raise TypeError(
+            "Invalid data type for db_type attribute. Required type: string."
+        )
+
+    allowed_types = [member.value for member in DatabaseMapping]
+
+    if db_type.lower() not in allowed_types:
+        raise ValueError("Invalid database type. Allowed types: %s." % allowed_types)

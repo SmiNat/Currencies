@@ -128,13 +128,14 @@ class CurrencyRatesDatabaseConnector:
         currency_data = {"date": date, "rate": rate}
 
         # Check if currency with given rate and date is already in the database
-        if currency_data in self._data[currency]:
-            logger.debug(
-                "A currency '%s' with data '%s' already exists in the database.",
-                currency,
-                currency_data,
-            )
-            return
+        if currency.upper() in self._data:
+            if currency_data in self._data[currency]:
+                logger.debug(
+                    "A currency '%s' with data '%s' already exists in the database.",
+                    currency,
+                    currency_data,
+                )
+                return
 
         # If currency not yet in the database - add a new currency with given rate
         # and date to the database

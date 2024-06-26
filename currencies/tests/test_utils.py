@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from currencies.enums import CurrencySource
+from currencies.enums import CurrencySource, DatabaseMapping
 from currencies.exceptions import CurrencyNotFoundError
 from currencies.utils import (
     get_available_data_sources,
@@ -10,6 +10,7 @@ from currencies.utils import (
     validate_currency_input_data,
     validate_data_source,
     validate_date,
+    validate_db_type,
 )
 
 
@@ -101,3 +102,20 @@ def test_validate_currency_input_data_invalid_date_type():
 
 def test_list_of_all_currency_codes():
     assert set(["EUR", "GBP", "USD", "PLN"]) <= set(list_of_all_currency_codes())
+
+
+def test_validate_db_type():
+    with pytest.raises(TypeError) as exc_info:
+        validate_db_type(datetime.date(2020, 10, 10))
+    assert "Invalid data type for db_type attribute. Required type: string" in str(
+        exc_info.value
+    )
+
+
+def test_validate_db_type_allowed_types():
+    allowed_types = [src.value for src in DatabaseMapping]
+    with pytest.raises(ValueError) as exc_info:
+        validate_db_type("invalid")
+    assert f"Invalid database type. Allowed types: {allowed_types}" in str(
+        exc_info.value
+    )
