@@ -157,7 +157,7 @@ def configure_logging() -> None:
                     ],
                     "level": "INFO" if Config.ENV_STATE == "prod" else "DEBUG",
                     "propagade": False,
-                },
+                }
             },
         }
     )

@@ -3,11 +3,13 @@ import json
 import os
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
-os.environ["ENV_STATE"] = (
-    "test"  # w naszym zadaniu chyba mowa o dev jako środowisku testowym (?)
-)
+# uwaga, w przypadku wykorzystania zmiennych środowiskowych do ustanowienia testowych warunków,
+# należy dopasować zmienną odpowiedzialną za wybór środowiska (eg. ENV_STATE)
+# oraz zbudować mechanizm uzależniający prowadzenie testów na wybranym środowisku
+os.environ["ENV_STATE"] = "test"  # tu: łącze nieaktywne
+# tu: niezbędne łącza do plików testowych zostały określone z niniejszym pliku
 
 from currencies.database_config import Base, CurrencyData, sessionmaker  # noqa: E402
 
@@ -15,10 +17,10 @@ clean_test_db = True
 clean_currency_db = True
 
 TEST_DB_DIR = os.path.dirname(os.path.realpath(__file__))
-TEST_DB_JSON_FILE = os.path.join(TEST_DB_DIR, "test_db.json")
+TEST_DB_JSON_FILE = os.path.join(TEST_DB_DIR, "database_for_tests.json")
 
-TEST_DB_SQLITE_URL = "sqlite:///currencies/tests/test_db.sqlite"
-TEST_DB_SQLITE_FILE = os.path.join(TEST_DB_DIR, "test_db.sqlite")
+TEST_DB_SQLITE_FILE = os.path.join(TEST_DB_DIR, "database_for_tests.sqlite")
+TEST_DB_SQLITE_URL = f"sqlite:///{TEST_DB_SQLITE_FILE}"
 
 CURRENCY_DB_JSON_FILE = os.path.join(TEST_DB_DIR, "currency_db.json")
 
@@ -121,16 +123,15 @@ def db_session():
 
 
 @pytest.fixture(autouse=clean_currency_db, scope="function")
-def clean_test_sqlite_db():
-    try:
-        yield
-    finally:
-        if os.path.exists(TEST_DB_SQLITE_FILE):
-            os.remove(TEST_DB_SQLITE_FILE)
+def clean_sqlite_db():
+    """Cleans db session for each test."""
+    with TestingSessionLocal() as db:
+        db.execute(text("DELETE FROM currency_data"))
+        db.commit()
 
 
 @pytest.fixture
-def populate_test_sqlite_db():
+def sqlite_db_initial_data():
     """Fixture to populate the test_db.sqlite with initial data."""
     db = TestingSessionLocal()
     try:
