@@ -8,6 +8,13 @@ class CurrencySource(str, Enum):
     JSON_FILE = "json file"
 
 
+class DatabaseMapping(str, Enum):
+    """Enum for database environment mappings."""
+
+    PROD = "sqlite"
+    DEV = "json"
+
+
 class LocalDatabaseUrl(str, Enum):
     """Enum for specifying directory of local databases."""
 

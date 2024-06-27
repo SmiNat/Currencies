@@ -3,11 +3,13 @@ import logging
 import os
 from collections import OrderedDict
 
-from ...config import Config
 from ...currency_converter import ConvertedPricePLN
 from ...utils import validate_currency_input_data
 
 logger = logging.getLogger("currencies")
+
+
+JSON_DATABASE_NAME = os.environ.get("JSON_DATABASE_NAME")
 
 
 class JsonFileDatabaseConnector:
@@ -32,13 +34,10 @@ class JsonFileDatabaseConnector:
         - dict[str, Any]: The data read from the JSON file. Returns an empty
           dictionary if the file does not exist or an error occurs.
         """
-        if not os.path.exists(Config.DATABASE_URL):
-            logger.error(
-                "FileNotFoundError: unable to locate file: %s", {Config.DATABASE_URL}
-            )
-            return {}
+        if not os.path.exists(JSON_DATABASE_NAME):
+            raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
         try:
-            with open(Config.DATABASE_URL, "r") as file:
+            with open(JSON_DATABASE_NAME, "r") as file:
                 return json.load(file)
         except (json.JSONDecodeError, IOError) as e:
             logger.error("Error reading data: %s", {e})
@@ -51,11 +50,13 @@ class JsonFileDatabaseConnector:
         Returns:
         - None.
         """
+        if not os.path.exists(JSON_DATABASE_NAME):
+            raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
         try:
-            with open(Config.DATABASE_URL, "w") as file:
+            with open(JSON_DATABASE_NAME, "w") as file:
                 json.dump(self._data, file, indent=4)
         except IOError as e:
-            logger.error("Error writing data to %s: %s", Config.DATABASE_URL, e)
+            logger.error("Error writing data to %s: %s", JSON_DATABASE_NAME, e)
             raise
 
     def save(self, entity: ConvertedPricePLN) -> int:
@@ -86,7 +87,7 @@ class JsonFileDatabaseConnector:
                     "A currency '%s' with given data already exists in the database.",
                     entity["currency"],
                 )
-                return int(key)
+                return key
 
         # Add a new record to the database
         new_id = str(max(map(int, self._data.keys()), default=0) + 1)
@@ -148,6 +149,7 @@ class JsonFileDatabaseConnector:
         validate_currency_input_data(currency, date, rate, price_in_pln)
 
         updated_entity = {
+            "id": entity_id,
             "currency": currency or entity["currency"],
             "rate": rate or entity["rate"],
             "price_in_pln": price_in_pln or entity["price_in_pln"],

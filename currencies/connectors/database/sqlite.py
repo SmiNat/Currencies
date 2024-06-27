@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 from contextlib import contextmanager
 
 from sqlalchemy.orm import Session
@@ -10,6 +11,8 @@ from ...utils import validate_currency_input_data
 
 logger = logging.getLogger("currencies")
 
+SQLITE_DATABASE_NAME = os.environ.get("SQLITE_DATABASE_NAME")
+
 
 class SQLiteDatabaseConnector:
     """A connector class to interact with the SQLite database."""
@@ -17,13 +20,13 @@ class SQLiteDatabaseConnector:
     def __init__(self, session: Session | None = None) -> None:
         """
         Initializes the connector with the given session factory or the default
-        SessionLocal.
+        SessionLocal().
 
         Attributes:
         - session (Session, optional): The session factory for creating database
-          sessions. Defaults to SessionLocal if not provided.
+          sessions. Defaults to SessionLocal() if not provided.
         """
-        self.session = SessionLocal if not session else session
+        self.session = SessionLocal() if not session else session
 
     @contextmanager
     def _get_session(self) -> Session:  # type: ignore
@@ -33,7 +36,13 @@ class SQLiteDatabaseConnector:
         Yields:
         - Session: A SQLAlchemy session.
         """
-        session = self.session()
+        session = self.session
+
+        if not isinstance(session, Session):
+            raise TypeError(
+                "Invalid session initial attribute. Required type: Session."
+            )
+
         try:
             yield session
         except Exception as e:
@@ -55,7 +64,7 @@ class SQLiteDatabaseConnector:
         - int: The ID of the newly added currency data record or already existing one.
         """
         if not isinstance(entity, ConvertedPricePLN):
-            raise TypeError("Entity must be a ConvertedPricePLN instance")
+            raise TypeError("Entity must be a ConvertedPricePLN instance.")
 
         with self._get_session() as session:
             # Check if currency with the same data as data of the entity is

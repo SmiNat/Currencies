@@ -1,4 +1,9 @@
 class CurrencyDataIntegrityError(Exception):
+    """
+    Exception raised when an attempt to insert or update data violates
+    integrity constraints in the database.
+    """
+
     def __init__(self):
         message = (
             "IntegrityError: UNIQUE constraint failed: "
@@ -27,4 +32,17 @@ class CurrencyNotFoundError(Exception):
         )
         if available_currencies:
             message += " Available currencies: %s." % available_currencies
+        super().__init__(message)
+
+
+class DatabaseError(Exception):
+    """
+    Exception raised when a database URL cannot be set.
+    """
+
+    def __init__(self):
+        message = (
+            "Unable to set proper connector to the database. "
+            "Check the environment settings."
+        )
         super().__init__(message)

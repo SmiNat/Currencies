@@ -2,3 +2,4 @@ httpx
 currency-codes
 SQLAlchemy
 python-dotenv
+pytest

@@ -7,6 +7,8 @@ from ...utils import validate_currency_input_data
 
 logger = logging.getLogger("currencies")
 
+LOCAL_CURRENCY = LocalDatabaseUrl.CURRENCY_RATES_URL
+
 
 class CurrencyRatesDatabaseConnector:
     """A connector class to retrieve currency rate data from a JSON file database."""
@@ -30,17 +32,14 @@ class CurrencyRatesDatabaseConnector:
         - dict: The data read from the JSON file. Returns an empty dictionary
           if the file does not exist or an error occurs.
         """
-        if not os.path.exists(LocalDatabaseUrl.CURRENCY_RATES_URL):
-            logger.error(
-                "FileNotFoundError: unable to locate file: %s",
-                {LocalDatabaseUrl.CURRENCY_RATES_URL},
-            )
-            return {}
+        if not os.path.exists(LOCAL_CURRENCY):
+            raise FileNotFoundError("Unable to locate file: %s" % LOCAL_CURRENCY)
+
         try:
-            with open(LocalDatabaseUrl.CURRENCY_RATES_URL, "r") as file:
+            with open(LOCAL_CURRENCY, "r") as file:
                 return json.load(file)
         except (json.JSONDecodeError, IOError) as e:
-            logger.error("Error reading data: %s", {e})
+            logger.error("Error reading data: %s" % e)
             return {}
 
     def _write_data(self) -> None:
@@ -50,13 +49,13 @@ class CurrencyRatesDatabaseConnector:
         Returns:
         - None.
         """
+        if not os.path.exists(LOCAL_CURRENCY):
+            raise FileNotFoundError("Unable to locate file: %s" % LOCAL_CURRENCY)
         try:
-            with open(LocalDatabaseUrl.CURRENCY_RATES_URL, "w") as file:
+            with open(LOCAL_CURRENCY, "w") as file:
                 json.dump(self._data, file, indent=4)
         except IOError as e:
-            logger.error(
-                "Error writing data to %s: %s", LocalDatabaseUrl.CURRENCY_RATES_URL, e
-            )
+            logger.error("Error writing data to %s: %s" % (LOCAL_CURRENCY, e))
             raise
 
     def get_all(self) -> dict:
@@ -128,13 +127,14 @@ class CurrencyRatesDatabaseConnector:
         currency_data = {"date": date, "rate": rate}
 
         # Check if currency with given rate and date is already in the database
-        if currency_data in self._data[currency]:
-            logger.debug(
-                "A currency '%s' with data '%s' already exists in the database.",
-                currency,
-                currency_data,
-            )
-            return
+        if currency.upper() in self._data:
+            if currency_data in self._data[currency]:
+                logger.debug(
+                    "A currency '%s' with data '%s' already exists in the database.",
+                    currency,
+                    currency_data,
+                )
+                return
 
         # If currency not yet in the database - add a new currency with given rate
         # and date to the database
