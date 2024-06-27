@@ -39,5 +39,11 @@ Python 3.10
 
 - do zastanowienia, ujednolicenie by klasa ConvertedPricePLN (z atrybutami: "currency", "currency_rate", "currency_rate_fetch_date", "price_in_pln", "price_in_source_currency") miała takie same nazwy atrybutów jak dane zapisywane w bazie danych ["currency", "rate", "price_in_pln", "date"] - wówczas rozpaowanie klasy ConvertedPricePLN do bazy danych z modelem CurrencyData byłoby znacznie łatwiejsze
 
-- krok do wdrożenia: zamienić metody operujące na bazach danych na funkcje asynchroniczne (doczytać jak to działa na plikach bazodanowych i jak działa biblioteka asyncio)
+- krok do wdrożenia: zamienić metody operujące na bazach danych na funkcje asynchroniczne (doczytać jak to działa na plikach bazodanowych i jak działa biblioteka asyncio), przjeść na asynchroniczne pobieranie danych z API NBP
 
+- klasa ConvertedPricePLN w pliku currency_converter.py - do rozważenia czy nie zmianić
+  atrybutu price_in_pln: float na metodę obliczającą ten atrybut na podstawie pozostałych danych,
+  albo dodać walidację:
+  def _validate_price_in_pln(self):
+        if not self.price_in_pln == round(self.price_in_source_currency * self.currency_rate, 2):
+            raise ValueError("Computed price_in_pln does not match expected value.")

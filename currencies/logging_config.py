@@ -69,7 +69,7 @@ class ColoredFormatter(logging.Formatter):
         **kwargs,
     ):
         datefmt = kwargs.pop("datefmt", "%Y-%m-%d %H:%M:%S")
-        logging.Formatter.__init__(self, *args, datefmt=datefmt, **kwargs)  # noqa: E501 >> super().__init__(*args, datefmt=datefmt, **kwargs)
+        logging.Formatter.__init__(self, *args, datefmt=datefmt, **kwargs)
 
         if not custom_format:
             self.desired_format = (
@@ -85,7 +85,7 @@ class ColoredFormatter(logging.Formatter):
 
     def format(self, record):
         # Making a copy of a record to prevent altering the message for other loggers
-        record = logging.makeLogRecord(record.__dict__)  # noqa: E501 >> or import copy and record = copy.copy(record)
+        record = logging.makeLogRecord(record.__dict__)
 
         extra_info = record.__dict__.pop("additional information", "")
         if extra_info:
@@ -97,7 +97,7 @@ class ColoredFormatter(logging.Formatter):
 
         # Formatting the record using desired_format
         self._style._fmt = self.desired_format
-        msg = super().format(record)  # noqa: E501 >> msg = logging.Formatter.format(self, record)
+        msg = super().format(record)
         return msg
 
 

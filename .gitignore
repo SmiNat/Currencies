@@ -11,6 +11,8 @@ env
 .vscode/
 *Zone.Identifier
 *.sqlite3
+*.sqlite
+*.db
 *.log
 
 # Private files
