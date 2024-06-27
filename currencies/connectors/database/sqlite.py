@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 from contextlib import contextmanager
 
 from sqlalchemy.orm import Session
@@ -9,6 +10,8 @@ from ...database_config import CurrencyData, SessionLocal
 from ...utils import validate_currency_input_data
 
 logger = logging.getLogger("currencies")
+
+SQLITE_DATABASE_NAME = os.environ.get("SQLITE_DATABASE_NAME")
 
 
 class SQLiteDatabaseConnector:

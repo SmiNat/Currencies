@@ -1,9 +1,15 @@
 import datetime
 import json
 import os
+from unittest.mock import patch
 
 import pytest
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+
+from currencies.config import Config
+
+load_dotenv()
 
 # uwaga, w przypadku wykorzystania zmiennych środowiskowych do ustanowienia testowych warunków,
 # należy dopasować zmienną odpowiedzialną za wybór środowiska (eg. ENV_STATE)
@@ -13,14 +19,11 @@ os.environ["ENV_STATE"] = "test"  # tu: łącze nieaktywne
 
 from currencies.database_config import Base, CurrencyData, sessionmaker  # noqa: E402
 
-clean_test_db = True
-clean_currency_db = True
-
 TEST_DB_DIR = os.path.dirname(os.path.realpath(__file__))
-TEST_DB_JSON_FILE = os.path.join(TEST_DB_DIR, "database_for_tests.json")
+TEST_DB_JSON_URL = os.path.join(TEST_DB_DIR, "database_for_tests.json")
 
-TEST_DB_SQLITE_FILE = os.path.join(TEST_DB_DIR, "database_for_tests.sqlite")
-TEST_DB_SQLITE_URL = f"sqlite:///{TEST_DB_SQLITE_FILE}"
+TEST_DB_SQLITE_PATH = os.path.join(TEST_DB_DIR, "database_for_tests.sqlite")
+TEST_DB_SQLITE_URL = f"sqlite:///{TEST_DB_SQLITE_PATH}"
 
 CURRENCY_DB_JSON_FILE = os.path.join(TEST_DB_DIR, "currency_db.json")
 
@@ -47,10 +50,14 @@ CURRENCY_DB = {
     "CZK": [{"date": "2023-03-02", "rate": 0.29}, {"date": "2023-07-30", "rate": 0.28}],
 }
 
+# Set cleaning of database afert each test
+clean_test_db = True
+clean_currency_db = True
+
 
 @pytest.fixture
 def test_db_path():
-    return TEST_DB_JSON_FILE
+    return TEST_DB_JSON_URL
 
 
 @pytest.fixture
@@ -59,13 +66,13 @@ def test_db_content():
 
 
 @pytest.fixture
-def test_json_db():
+def test_json_db(test_db_path):
     os.makedirs(TEST_DB_DIR, exist_ok=True)
 
-    with open(TEST_DB_JSON_FILE, "w") as file:
+    with open(test_db_path, "w") as file:
         json.dump(TEST_DB, file, indent=4)
 
-    with open(TEST_DB_JSON_FILE, "r") as file:
+    with open(test_db_path, "r") as file:
         yield json.load(file)
 
 
@@ -74,8 +81,8 @@ def clean_test_json_db():
     try:
         yield
     finally:
-        if os.path.exists(TEST_DB_JSON_FILE):
-            os.remove(TEST_DB_JSON_FILE)
+        if os.path.exists(TEST_DB_JSON_URL):
+            os.remove(TEST_DB_JSON_URL)
 
 
 @pytest.fixture
@@ -158,3 +165,15 @@ def sqlite_db_initial_data():
         return data1, data2
     finally:
         db.close()
+
+
+@pytest.fixture()
+def mock_config_env_state_dev():
+    with patch.object(Config, "ENV_STATE", return_value="dev"):
+        yield
+
+
+@pytest.fixture()
+def mock_config_env_state_prod():
+    with patch.object(Config, "ENV_STATE", return_value="prod"):
+        yield

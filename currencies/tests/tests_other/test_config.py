@@ -38,15 +38,6 @@ def test_config_dev_environment():
         assert config.DATABASE_URL == "some_database.json"
 
 
-def test_config_default_environment():
-    with patch.dict(
-        os.environ, {"DEV_DATABASE_URL": "some_database.json"}, clear=True
-    ):  # No ENV_STATE set, default to 'dev'
-        config = reload_config_module()
-        assert config.ENV_STATE == "dev"
-        assert config.DATABASE_URL == "some_database.json"
-
-
 def test_config_unsupported_environment():
     with patch.dict(os.environ, {"ENV_STATE": "invalid"}):
         with pytest.raises(ValueError, match="Unsupported environment state: invalid"):

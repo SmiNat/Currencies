@@ -1,4 +1,8 @@
-from currencies.exceptions import CurrencyDataIntegrityError, CurrencyNotFoundError
+from currencies.exceptions import (
+    CurrencyDataIntegrityError,
+    CurrencyNotFoundError,
+    DatabaseError,
+)
 
 
 def test_CurrencyDataIntegrityError():
@@ -56,4 +60,17 @@ def test_CurrencyNotFoundError_with_available_currencies():
         )
     except CurrencyNotFoundError as exc:
         assert exp_message in str(exc)
+        assert isinstance(exc, Exception)
+
+
+def test_DatabaseError():
+    exp_message = (
+        "Unable to set proper connector to the database. "
+        "Check the environment settings."
+    )
+
+    try:
+        raise DatabaseError()
+    except DatabaseError as exc:
+        assert str(exc) == exp_message
         assert isinstance(exc, Exception)

@@ -33,3 +33,16 @@ class CurrencyNotFoundError(Exception):
         if available_currencies:
             message += " Available currencies: %s." % available_currencies
         super().__init__(message)
+
+
+class DatabaseError(Exception):
+    """
+    Exception raised when a database URL cannot be set.
+    """
+
+    def __init__(self):
+        message = (
+            "Unable to set proper connector to the database. "
+            "Check the environment settings."
+        )
+        super().__init__(message)

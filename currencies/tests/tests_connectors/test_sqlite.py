@@ -151,6 +151,7 @@ def test_save(db_session):
         db_session.query(CurrencyData).filter(CurrencyData.currency == "CHF").first()
     )
     assert db_record is None
+    assert db_session.query(CurrencyData).count() == 0
 
     exp_result = 1
 
@@ -161,6 +162,7 @@ def test_save(db_session):
         db_session.query(CurrencyData).filter(CurrencyData.currency == "CHF").first()
     )
     assert db_record is not None
+    assert db_session.query(CurrencyData).count() == 1
 
 
 def test_save_invalid_data_type(db_session):
@@ -177,7 +179,7 @@ def test_save_invalid_data_type(db_session):
     assert exp_response in str(exc_info)
 
 
-def test_save_if_data_already_in_db(db_session, sqlite_db_initial_data, caplog):
+def test_save_if_data_already_in_db(db_session, sqlite_db_initial_data):
     session = SQLiteDatabaseConnector(db_session)
     entity = ConvertedPricePLN(10, "USD", 4.22, "2020-10-10", 42.2)
 
@@ -193,14 +195,15 @@ def test_save_if_data_already_in_db(db_session, sqlite_db_initial_data, caplog):
         .first()
     )
     assert db_record is not None
+    assert db_session.query(CurrencyData).count() == 2
+
     id = db_record.id
 
     # Check save method response
     exp_response = id
-    logger_data = "A currency 'USD' with given data already exists in the database."
     response = session.save(entity)
     assert exp_response == response
-    assert logger_data in caplog.messages
+    assert db_session.query(CurrencyData).count() == 2
 
 
 def test_update(db_session, sqlite_db_initial_data):

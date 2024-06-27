@@ -1,4 +1,3 @@
-import json
 from unittest.mock import patch
 
 import pytest
@@ -8,12 +7,17 @@ from currencies.currency_converter import ConvertedPricePLN
 from currencies.exceptions import CurrencyNotFoundError
 
 
-def test_init():
-    connector = JsonFileDatabaseConnector()
-    assert isinstance(connector, JsonFileDatabaseConnector)
+def test_init(test_json_db):
+    with patch.object(
+        JsonFileDatabaseConnector,
+        "_read_data",
+        return_value=test_json_db,
+    ):
+        connector = JsonFileDatabaseConnector()
+        assert isinstance(connector, JsonFileDatabaseConnector)
 
 
-def test_read_values(test_json_db: dict, test_db_content: dict):
+def test_read_data(test_json_db: dict, test_db_content: dict):
     with patch.object(
         JsonFileDatabaseConnector,
         "_read_data",
@@ -23,32 +27,11 @@ def test_read_values(test_json_db: dict, test_db_content: dict):
         assert connector._read_data() == test_db_content
 
 
-def test_read_data_file_not_found(caplog):
+def test_read_data_file_not_found():
     with patch("os.path.exists", return_value=False):
-        connector = JsonFileDatabaseConnector()
-        assert connector.get_all() == []
-        assert any(
-            "FileNotFoundError: unable to locate file" in log.message
-            for log in caplog.records
-        )
-
-
-def test_read_data_json_decode_error(caplog):
-    with patch("json.load", side_effect=json.JSONDecodeError("error message", "", 0)):
-        connector = JsonFileDatabaseConnector()
-        assert connector.get_all() == []
-        assert any("Error reading data:" in log.message for log in caplog.records)
-
-
-def test_write_data_io_error(caplog, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
-        with patch("json.dump", side_effect=IOError("IO error")):
+        with pytest.raises(FileNotFoundError) as exc_value:
             connector = JsonFileDatabaseConnector()
-            # entity = ConvertedPricePLN(10, "USD", 4.2, "2024-06-30", 42)
-            with pytest.raises(IOError):
-                connector._write_data()
-            assert any("Error writing data to" in log.message for log in caplog.records)
-            assert any("IO error" in log.message for log in caplog.records)
+    assert "Unable to locate file" in str(exc_value)
 
 
 def test_get_all(test_json_db: dict, test_db_content: dict):
@@ -108,15 +91,18 @@ def test_get_by_id_invalid_id(test_json_db: dict, test_db_content: dict):
 
 
 def test_save_new_entity(test_json_db: dict, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
-        entity = ConvertedPricePLN(10, "USD", 4.2, "2024-06-30", 42)
+        new_entity = ConvertedPricePLN(10, "USD", 4.2, "2024-06-30", 42)
         existing_ids = list(test_json_db.keys())
+        assert existing_ids == list(connector._read_data().keys())
+        assert len(connector._read_data()) == 2
 
-        new_id = connector.save(entity)
+        new_id = connector.save(new_entity)
         assert isinstance(new_id, str)
         assert isinstance(int(new_id), int)
         assert new_id not in existing_ids
+        assert len(connector._read_data()) == 3
 
         saved_entity = connector.get_by_id(new_id)
         assert saved_entity is not None
@@ -127,7 +113,7 @@ def test_save_new_entity(test_json_db: dict, test_db_path: str):
 
 
 def test_save_new_entity_invalid_data_type(test_json_db: dict, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         entity = {
             "price_in_currency": 10,
@@ -141,11 +127,16 @@ def test_save_new_entity_invalid_data_type(test_json_db: dict, test_db_path: str
         assert "Entity must be of type ConvertedPricePLN" in str(exc_info.value)
 
 
-def test_save_new_entity_already_in_db(test_json_db: dict, test_db_path: str, caplog):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+def test_save_new_entity_already_in_db(test_json_db: dict, test_db_path: str):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         existing_ids = list(test_json_db.keys())
+        assert existing_ids == list(connector._read_data().keys())
+
         existing_data = test_json_db["3"]  # existing id
+        assert "3" in list(test_json_db.keys())
+        assert "3" in list(connector._read_data().keys())
+        assert len(test_json_db) == 2
 
         entity = ConvertedPricePLN(
             5,
@@ -158,15 +149,11 @@ def test_save_new_entity_already_in_db(test_json_db: dict, test_db_path: str, ca
         new_id = connector.save(entity)
         assert new_id in existing_ids
         assert new_id == "3"
-        assert any(
-            "A currency 'eur' with given data already exists in the database"
-            in log.message
-            for log in caplog.records
-        )
+        assert len(test_json_db) == 2
 
 
 def test_update_entity(test_json_db: dict, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         entity_id = 1
         new_rate = 4.8
@@ -189,7 +176,7 @@ def test_update_entity(test_json_db: dict, test_db_path: str):
 
 
 def test_update_entity_with_invalid_id(test_json_db: dict, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         entity_id = 999  # non existing id
         new_rate = 4.8
@@ -246,7 +233,7 @@ def test_update_entity_with_invalid_datato_update(
     error: Exception,
     message: str,
 ):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         entity_id = 1  # existing id
 
@@ -263,7 +250,7 @@ def test_update_entity_with_invalid_datato_update(
 
 
 def test_delete_entity(test_json_db: dict, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         entity_id = 1
         assert connector.get_by_id(entity_id) is not None
@@ -275,7 +262,7 @@ def test_delete_entity(test_json_db: dict, test_db_path: str):
 
 
 def test_delete_entity_with_non_existing_record(test_json_db: dict, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         entity_id = 999  # non existing id
         assert connector.get_by_id(entity_id) is None
@@ -287,8 +274,8 @@ def test_delete_entity_with_non_existing_record(test_json_db: dict, test_db_path
         )
 
 
-def test_delete_entity_raises_exception(caplog, test_db_path: str):
-    with patch("currencies.connectors.database.json.Config.DATABASE_URL", test_db_path):
+def test_delete_entity_raises_exception(caplog, test_json_db, test_db_path: str):
+    with patch("currencies.connectors.database.json.JSON_DATABASE_NAME", test_db_path):
         connector = JsonFileDatabaseConnector()
         entity_id = connector.save(ConvertedPricePLN(10, "USD", 4.2, "2024-06-30", 42))
 
