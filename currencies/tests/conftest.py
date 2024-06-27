@@ -20,12 +20,13 @@ os.environ["ENV_STATE"] = "test"  # tu: łącze nieaktywne
 from currencies.database_config import Base, CurrencyData, sessionmaker  # noqa: E402
 
 TEST_DB_DIR = os.path.dirname(os.path.realpath(__file__))
+
 TEST_DB_JSON_URL = os.path.join(TEST_DB_DIR, "database_for_tests.json")
 
 TEST_DB_SQLITE_PATH = os.path.join(TEST_DB_DIR, "database_for_tests.sqlite")
 TEST_DB_SQLITE_URL = f"sqlite:///{TEST_DB_SQLITE_PATH}"
 
-CURRENCY_DB_JSON_FILE = os.path.join(TEST_DB_DIR, "currency_db.json")
+TEST_CURRENCY_LOCAL_DB_URL = os.path.join(TEST_DB_DIR, "currency_db.json")
 
 TEST_DB = {
     "1": {
@@ -46,8 +47,8 @@ TEST_DB = {
 
 
 CURRENCY_DB = {
-    "EUR": [{"date": "2023-10-01", "rate": 4.25}, {"date": "2023-01-30", "rate": 4.05}],
-    "CZK": [{"date": "2023-03-02", "rate": 0.29}, {"date": "2023-07-30", "rate": 0.28}],
+    "EUR": [{"date": "2022-10-10", "rate": 4.25}, {"date": "2022-01-30", "rate": 4.05}],
+    "CZK": [{"date": "2022-02-02", "rate": 0.29}, {"date": "2022-07-30", "rate": 0.28}],
 }
 
 # Set cleaning of database afert each test
@@ -86,22 +87,42 @@ def clean_test_json_db():
 
 
 @pytest.fixture
-def currency_load_db():
+def test_currency_local_db_path():
+    return TEST_CURRENCY_LOCAL_DB_URL
+
+
+@pytest.fixture
+def test_currency_local_db_content():
+    return CURRENCY_DB
+
+
+@pytest.fixture
+def currency_load_db(test_currency_local_db_path):
     os.makedirs(TEST_DB_DIR, exist_ok=True)
-    with open(CURRENCY_DB_JSON_FILE, "w") as file:
+
+    with open(test_currency_local_db_path, "w") as file:
         json.dump(CURRENCY_DB, file, indent=4)
 
-    with open(CURRENCY_DB_JSON_FILE, "r") as file:
+    with open(test_currency_local_db_path, "r") as file:
         yield json.load(file)
 
 
+@pytest.fixture
+def mock_file_directory(test_currency_local_db_path):
+    with patch(
+        "currencies.connectors.local.file_reader.LOCAL_CURRENCY",
+        test_currency_local_db_path,
+    ):
+        yield
+
+
 @pytest.fixture(autouse=clean_currency_db, scope="function")
-def clean_currency_load_db():
+def clean_currency_load_db(currency_load_db):
     try:
         yield
     finally:
-        if os.path.exists(CURRENCY_DB_JSON_FILE):
-            os.remove(CURRENCY_DB_JSON_FILE)
+        if os.path.exists(TEST_CURRENCY_LOCAL_DB_URL):
+            os.remove(TEST_CURRENCY_LOCAL_DB_URL)
 
 
 # Creating test.sqlite database instead of using application db (database.sqlite)
