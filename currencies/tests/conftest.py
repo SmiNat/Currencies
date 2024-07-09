@@ -31,6 +31,7 @@ TEST_CURRENCY_LOCAL_DB_URL = os.path.join(TEST_DB_DIR, "currency_db.json")
 TEST_DB = {
     "1": {
         "id": 1,
+        "amount": 10,
         "currency": "eur",
         "rate": 4.44,
         "price_in_pln": 22.2,
@@ -38,6 +39,7 @@ TEST_DB = {
     },
     "3": {
         "id": 3,
+        "amount": 5,
         "currency": "eur",
         "rate": 4.65,
         "price_in_pln": 23.25,
@@ -165,12 +167,14 @@ def sqlite_db_initial_data():
     try:
         # Insert records into the test_db.sqlite
         data1 = CurrencyData(
+            amount=10,
             currency="GBP",
             rate=5.1234,
             date=datetime.date(2024, 6, 1),
             price_in_pln=51.234,
         )
         data2 = CurrencyData(
+            amount=10,
             currency="USD",
             rate=4.22,
             date=datetime.date(2020, 10, 10),

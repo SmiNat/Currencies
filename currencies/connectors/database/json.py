@@ -27,13 +27,7 @@ class JsonFileDatabaseConnector:
 
     @staticmethod
     def _read_data() -> dict:
-        """
-        Reads data from the JSON file.
-
-        Returns:
-        - dict[str, Any]: The data read from the JSON file. Returns an empty
-          dictionary if the file does not exist or an error occurs.
-        """
+        """Reads data from the JSON file."""
         if not os.path.exists(JSON_DATABASE_NAME):
             raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
         try:
@@ -44,12 +38,7 @@ class JsonFileDatabaseConnector:
             return {}
 
     def _write_data(self) -> None:
-        """
-        Writes the current state of the in-memory database (_data) to the JSON file.
-
-        Returns:
-        - None.
-        """
+        """Writes the current state of the in-memory database (_data) to the JSON file."""
         if not os.path.exists(JSON_DATABASE_NAME):
             raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
         try:
@@ -66,14 +55,12 @@ class JsonFileDatabaseConnector:
         Args:
         - entity (ConvertedPricePLN): An instance of ConvertedPricePLN to save
           in the database.
-
-        Returns:
-        - int: The ID of the saved entity.
         """
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be of type ConvertedPricePLN.")
 
         entity = {
+            "amount": entity.amount,
             "currency": entity.currency,
             "rate": entity.currency_rate,
             "price_in_pln": entity.price_in_pln,
@@ -99,12 +86,7 @@ class JsonFileDatabaseConnector:
         return new_id
 
     def get_all(self) -> list[dict]:
-        """
-        Retrieves all entities from the JSON file database.
-
-        Returns:
-        - list[dict[str, Any]]: A list of all entities in the database.
-        """
+        """Retrieves all entities from the JSON file database."""
         return list(self._data.values())
 
     def get_by_id(self, entity_id: int) -> dict | None:
@@ -113,16 +95,13 @@ class JsonFileDatabaseConnector:
 
         Args:
         - entity_id (int): The ID of the entity to retrieve.
-
-        Returns:
-        - [dict[str, Any] | None]: The entity with the specified ID,
-          or None if it does not exist.
         """
         return self._data.get(str(entity_id), None)
 
     def update(
         self,
         entity_id: int,
+        amount: float | None = None,
         currency: str | None = None,
         rate: float | None = None,
         price_in_pln: float | None = None,
@@ -133,13 +112,11 @@ class JsonFileDatabaseConnector:
 
         Args:
         - entity_id (int): The ID of the entity to update.
+        - amount (Optional[float]): The price in source currency.
         - currency (Optional[str]): The new currency code, if updating.
         - rate (Optional[float]): The new exchange rate, if updating.
         - price_in_pln (Optional[float]): The new price in PLN, if updating.
         - date (Optional[str]): The new date, if updating.
-
-        Returns:
-        - str: A message indicating the result of the update operation.
         """
         entity = self._data.get(str(entity_id), None)
         if not entity:
@@ -150,6 +127,7 @@ class JsonFileDatabaseConnector:
 
         updated_entity = {
             "id": entity_id,
+            "amount": amount or entity["amount"],
             "currency": currency or entity["currency"],
             "rate": rate or entity["rate"],
             "price_in_pln": price_in_pln or entity["price_in_pln"],
@@ -168,9 +146,6 @@ class JsonFileDatabaseConnector:
 
         Args:
         - entity_id (int): The ID of the currency data record to delete.
-
-        Returns:
-        - str: A message indicating the result of the deletion operation.
         """
         try:
             del self._data[str(entity_id)]

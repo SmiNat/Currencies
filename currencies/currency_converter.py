@@ -16,7 +16,7 @@ logger = logging.getLogger("currencies")
 class ConvertedPricePLN:
     """Data class representing a converted price in PLN."""
 
-    price_in_source_currency: float
+    amount: float  # price_in_source_currency
     currency: str
     currency_rate: float
     currency_rate_fetch_date: str
@@ -35,10 +35,6 @@ class PriceCurrencyConverterToPLN:
 
         Args:
         - currency (str): The currency code (e.g., 'USD', 'EUR').
-
-        Returns:
-        - tuple: A tuple containing the exchange rate (float) and date (str) or
-          a string message if no data found in the NPB's database.
         """
         url = f"{NbpWebApiUrl.TABLE_A_SINGLE_CURRENCY}/{currency.lower()}/?format=json"
         with httpx.Client() as client:
@@ -62,10 +58,6 @@ class PriceCurrencyConverterToPLN:
 
         Args:
         - currency (str): The currency code (e.g., 'USD', 'EUR').
-
-        Returns:
-        - tuple | str: A tuple containing the exchange rate (float) and date (str)
-          or a string message if no data found in the database.
         """
         currency_connector = CurrencyRatesDatabaseConnector()
         data = currency_connector.get_currency_latest_data(currency)
@@ -77,21 +69,18 @@ class PriceCurrencyConverterToPLN:
         return data["rate"], data["date"]
 
     def convert_to_pln(
-        self, currency: str, price: float, source: str
+        self, currency: str, amount: float, source: str
     ) -> ConvertedPricePLN:
         """
         Converts a price from a specified currency to PLN based on the given source.
 
         Args:
         - currency (str): The currency code (e.g., 'USD', 'EUR').
-        - price (float): The price in the source currency.
+        - amount (float): The price in the source currency.
         - source (str): The source of currency data ('JSON file' or 'API NBP').
-
-        Returns:
-        - ConvertedPricePLN: An instance of ConvertedPricePLN containing converted data.
         """
         validate_data_source(source)
-        validate_currency_input_data(currency, price=price)
+        validate_currency_input_data(currency, amount=amount)
 
         if source.lower() == CurrencySource.JSON_FILE.value:
             rate, date = self.fetch_single_currency_from_local_database(currency)
@@ -99,10 +88,10 @@ class PriceCurrencyConverterToPLN:
             rate, date = self.fetch_single_currency_from_nbp(currency)
 
         result = {
-            "price_in_source_currency": price,
+            "amount": amount,
             "currency": currency,
             "currency_rate": rate,
-            "price_in_pln": round(price * rate, 2),
+            "price_in_pln": round(amount * rate, 2),
             "currency_rate_fetch_date": date,
         }
 
@@ -118,9 +107,6 @@ class PriceCurrencyConverterToPLN:
         Args:
         - entity (ConvertedPricePLN): The entity containing the converted price
           data to be saved.
-
-        Returns:
-        - None.
         """
         db_type = Config.ENV_STATE
 

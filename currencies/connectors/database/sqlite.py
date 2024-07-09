@@ -32,9 +32,6 @@ class SQLiteDatabaseConnector:
     def _get_session(self) -> Session:  # type: ignore
         """
         Provides a context manager for database sessions.
-
-        Yields:
-        - Session: A SQLAlchemy session.
         """
         session = self.session
 
@@ -59,9 +56,6 @@ class SQLiteDatabaseConnector:
         Args:
         - entity (ConvertedPricePLN): An instance of ConvertedPricePLN to add
           to the database.
-
-        Returns:
-        - int: The ID of the newly added currency data record or already existing one.
         """
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be a ConvertedPricePLN instance.")
@@ -90,6 +84,7 @@ class SQLiteDatabaseConnector:
 
             # Add a new record to the database
             new_data = CurrencyData(
+                amount=entity.amount,
                 currency=entity.currency,
                 rate=entity.currency_rate,
                 date=datetime.datetime.strptime(
@@ -108,18 +103,14 @@ class SQLiteDatabaseConnector:
                 raise
 
     def get_all(self) -> list[dict]:
-        """
-        Retrieves all currency data records from the database.
-
-        Returns:
-        - list[dict[str, Any]]: A list with currency data records.
-        """
+        """Retrieves all currency data records from the database."""
         with self._get_session() as session:
             try:
                 records = session.query(CurrencyData).all()
                 return [
                     {
                         "id": record.id,
+                        "amount": record.amount,
                         "currency": record.currency,
                         "rate": record.rate,
                         "price_in_pln": record.price_in_pln,
@@ -137,10 +128,6 @@ class SQLiteDatabaseConnector:
 
         Args:
         - entity_id (int): The ID of the currency data record to retrieve.
-
-        Returns:
-        - [dict[str, Any] | None]: The currency data record with the specified ID,
-          or None if it does not exist.
         """
         with self._get_session() as session:
             try:
@@ -165,6 +152,7 @@ class SQLiteDatabaseConnector:
     def update(
         self,
         entity_id: int,
+        amount: float | None = None,
         currency: str | None = None,
         date: str | None = None,
         rate: float | None = None,
@@ -175,13 +163,11 @@ class SQLiteDatabaseConnector:
 
         Args:
         - entity_id (int): The ID of the entity to update.
+        - amount (Optional[float]): A price in source currency.
         - currency (Optional[str]): The new currency code, if updating.
         - rate (Optional[float]): The new exchange rate, if updating.
         - price_in_pln (Optional[float]): The new price in PLN, if updating.
         - date (Optional[str]): The new date, if updating.
-
-        Returns:
-        - str: A message indicating the result of the update operation.
         """
         with self._get_session() as session:
             record = (
@@ -193,6 +179,7 @@ class SQLiteDatabaseConnector:
 
             validate_currency_input_data(currency, date, rate, price_in_pln)
 
+            record.amount = amount or record.amount
             record.currency = currency or record.currency
             record.rate = rate or record.rate
             record.price_in_pln = price_in_pln or record.price_in_pln
@@ -217,9 +204,6 @@ class SQLiteDatabaseConnector:
 
         Args:
         - entity_id (int): The ID of the currency data record to delete.
-
-        Returns:
-        - str: A message indicating the result of the deletion operation.
         """
         with self._get_session() as session:
             try:

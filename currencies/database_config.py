@@ -26,7 +26,7 @@ class CurrencyData(Base):
     __tablename__ = "currency_data"
 
     id = Column(Integer, primary_key=True, index=True)
-    # price_in_source_currency = Column(Float, nullable=False)  # ommited, as in database.json
+    amount = Column(Float, nullable=False)
     currency = Column(String(5), nullable=False)  # Assuming codes with 3-5 characters
     rate = Column(Float, nullable=False)
     date = Column(Date, nullable=False)
