@@ -183,10 +183,10 @@ def test_save_if_data_already_in_db(db_session, sqlite_db_initial_data):
     db_record = (
         db_session.query(CurrencyData)
         .filter_by(
-            currency="USD",
-            currency_rate=4.22,
-            currency_date=datetime.date(2020, 10, 10),
-            price_in_pln=42.2,
+            currency=entity.currency,
+            currency_rate=entity.currency_rate,
+            currency_date=entity.currency_date,
+            price_in_pln=entity.price_in_pln,
         )
         .first()
     )
