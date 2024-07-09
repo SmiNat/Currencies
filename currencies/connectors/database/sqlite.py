@@ -4,9 +4,8 @@ from contextlib import contextmanager
 
 from sqlalchemy.orm import Session
 
-from ...currency_converter import ConvertedPricePLN
-from ...database_config import CurrencyData, SessionLocal
-from ...utils import validate_currency_input_data
+from ...database_config import CurrencyData, get_db
+from ...utils import ConvertedPricePLN, validate_currency_input_data
 
 logger = logging.getLogger("currencies")
 
@@ -16,22 +15,20 @@ SQLITE_DATABASE_NAME = os.environ.get("SQLITE_DATABASE_NAME")
 class SQLiteDatabaseConnector:
     """A connector class to interact with the SQLite database."""
 
-    def __init__(self, session: Session = SessionLocal()) -> None:
+    def __init__(self, session: Session = get_db()) -> None:
         """
         Initializes the connector with the given session factory or the default
         SessionLocal().
 
         Attributes:
         - session (Session): The session factory for creating database sessions.
-          Defaults to SessionLocal() if not provided.
+          Defaults to SessionLocal if not provided.
         """
         self.session = session
 
     @contextmanager
     def _get_session(self) -> Session:  # type: ignore
-        """
-        Provides a context manager for database sessions.
-        """
+        """Provides a context manager for database sessions."""
         session = self.session
 
         if not isinstance(session, Session):
@@ -80,13 +77,7 @@ class SQLiteDatabaseConnector:
                 return existing_record.id
 
             # Add a new record to the database
-            new_data = CurrencyData(
-                amount=entity.amount,
-                currency=entity.currency,
-                currency_rate=entity.currency_rate,
-                currency_date=entity.currency_date,
-                price_in_pln=entity.price_in_pln,
-            )
+            new_data = CurrencyData(**entity.__dict__)
             try:
                 session.add(new_data)
                 session.commit()
@@ -137,7 +128,6 @@ class SQLiteDatabaseConnector:
                         for col in record.__table__.columns
                     }
                     return record_as_dict
-
                 return None
             except Exception as e:
                 logger.error("Error while retrieving data from the database: %s", e)
@@ -169,6 +159,7 @@ class SQLiteDatabaseConnector:
             )
             if not record:
                 return f"No currency with id '{entity_id}' in the database."
+
             logger.debug("Database record to update: %s" % record.__dict__)
 
             validate_currency_input_data(
@@ -179,9 +170,7 @@ class SQLiteDatabaseConnector:
             record.currency = currency or record.currency
             record.currency_rate = currency_rate or record.currency_rate
             record.price_in_pln = price_in_pln or record.price_in_pln
-            record.currency_date = (
-                currency_date if currency_date else record.currency_date
-            )
+            record.currency_date = currency_date or record.currency_date
 
             try:
                 session.commit()

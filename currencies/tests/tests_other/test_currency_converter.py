@@ -2,12 +2,7 @@ from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 from currencies.connectors.local.file_reader import CurrencyRatesDatabaseConnector
-from currencies.currency_converter import ConvertedPricePLN, PriceCurrencyConverterToPLN
-
-
-def test_ConvertedPricePLN_init():
-    price = ConvertedPricePLN(10, "EUR", 4.3, "2020-10-10", 43)
-    assert isinstance(price, ConvertedPricePLN)
+from currencies.currency_converter import PriceCurrencyConverterToPLN
 
 
 def test_PriceCurrencyConverterToPLN_init():

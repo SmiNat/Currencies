@@ -3,8 +3,7 @@ import logging
 import os
 from collections import OrderedDict
 
-from ...currency_converter import ConvertedPricePLN
-from ...utils import validate_currency_input_data
+from ...utils import ConvertedPricePLN, validate_currency_input_data
 
 logger = logging.getLogger("currencies")
 

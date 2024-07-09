@@ -53,3 +53,12 @@ class CurrencyData(Base):
 
 # Creating database tables
 Base.metadata.create_all(bind=engine)
+
+
+# Creating a database connection
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

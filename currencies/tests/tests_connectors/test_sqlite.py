@@ -16,7 +16,7 @@ logger = logging.getLogger("currencies")
 DATABASE_INITIAL_DATA = [
     {
         "id": 1,
-        "amount": 10,
+        "amount": 10.0,
         "currency": "GBP",
         "currency_rate": 5.1234,
         "currency_date": "2024-06-01",
@@ -24,7 +24,7 @@ DATABASE_INITIAL_DATA = [
     },
     {
         "id": 2,
-        "amount": 10,
+        "amount": 10.0,
         "currency": "USD",
         "currency_rate": 4.22,
         "currency_date": "2020-10-10",

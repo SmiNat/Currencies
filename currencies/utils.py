@@ -1,9 +1,21 @@
 import datetime
+from dataclasses import dataclass
 
 from currency_codes import get_all_currencies
 
 from .enums import CurrencySource, DatabaseMapping
 from .exceptions import CurrencyNotFoundError
+
+
+@dataclass(frozen=True)
+class ConvertedPricePLN:
+    """Data class representing a converted price in PLN."""
+
+    amount: float | int  # price_in_source_currency
+    currency: str
+    currency_rate: float
+    currency_date: str
+    price_in_pln: float
 
 
 def get_available_data_sources():

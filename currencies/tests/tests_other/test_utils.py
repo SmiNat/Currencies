@@ -5,6 +5,7 @@ import pytest
 from currencies.enums import CurrencySource, DatabaseMapping
 from currencies.exceptions import CurrencyNotFoundError
 from currencies.utils import (
+    ConvertedPricePLN,
     get_available_data_sources,
     list_of_all_currency_codes,
     validate_currency_input_data,
@@ -12,6 +13,11 @@ from currencies.utils import (
     validate_date,
     validate_db_type,
 )
+
+
+def test_ConvertedPricePLN_init():
+    price = ConvertedPricePLN(10, "EUR", 4.3, "2020-10-10", 43)
+    assert isinstance(price, ConvertedPricePLN)
 
 
 def test_get_available_data_sources():
