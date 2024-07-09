@@ -1,4 +1,3 @@
-import datetime
 import json
 import os
 from unittest.mock import patch
@@ -170,14 +169,14 @@ def sqlite_db_initial_data():
             amount=10,
             currency="GBP",
             currency_rate=5.1234,
-            currency_date=datetime.date(2024, 6, 1),
+            currency_date="2024-06-01",
             price_in_pln=51.234,
         )
         data2 = CurrencyData(
             amount=10,
             currency="USD",
             currency_rate=4.22,
-            currency_date=datetime.date(2020, 10, 10),
+            currency_date="2020-10-10",
             price_in_pln=42.2,
         )
 

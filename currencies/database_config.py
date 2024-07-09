@@ -1,8 +1,10 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, Date, Float, Index, Integer, String, create_engine, func
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import Column, Float, Index, Integer, String, create_engine, func
+from sqlalchemy.orm import declarative_base, sessionmaker, validates
+
+from .utils import validate_date
 
 load_dotenv()
 
@@ -29,7 +31,7 @@ class CurrencyData(Base):
     amount = Column(Float, nullable=False)
     currency = Column(String(5), nullable=False)  # Assuming codes with 3-5 characters
     currency_rate = Column(Float, nullable=False)
-    currency_date = Column(Date, nullable=False)
+    currency_date = Column(String, nullable=False)  # 'YYYY-MM-DD' format allowed
     price_in_pln = Column(Float, nullable=False)
 
     __table_args__ = (
@@ -42,6 +44,11 @@ class CurrencyData(Base):
             unique=True,
         ),
     )
+
+    @validates("currency_date")
+    def validate_date(self, key, date):
+        validate_date(date)
+        return date
 
 
 # Creating database tables

@@ -1,4 +1,3 @@
-import datetime
 import logging
 import os
 from contextlib import contextmanager
@@ -17,16 +16,16 @@ SQLITE_DATABASE_NAME = os.environ.get("SQLITE_DATABASE_NAME")
 class SQLiteDatabaseConnector:
     """A connector class to interact with the SQLite database."""
 
-    def __init__(self, session: Session | None = None) -> None:
+    def __init__(self, session: Session = SessionLocal()) -> None:
         """
         Initializes the connector with the given session factory or the default
         SessionLocal().
 
         Attributes:
-        - session (Session, optional): The session factory for creating database
-          sessions. Defaults to SessionLocal() if not provided.
+        - session (Session): The session factory for creating database sessions.
+          Defaults to SessionLocal() if not provided.
         """
-        self.session = SessionLocal() if not session else session
+        self.session = session
 
     @contextmanager
     def _get_session(self) -> Session:  # type: ignore
@@ -69,9 +68,7 @@ class SQLiteDatabaseConnector:
                     currency=entity.currency,
                     currency_rate=entity.currency_rate,
                     price_in_pln=entity.price_in_pln,
-                    currency_date=datetime.datetime.strptime(
-                        entity.currency_date, "%Y-%m-%d"
-                    ).date(),
+                    currency_date=entity.currency_date,
                 )
                 .first()
             )
@@ -87,9 +84,7 @@ class SQLiteDatabaseConnector:
                 amount=entity.amount,
                 currency=entity.currency,
                 currency_rate=entity.currency_rate,
-                currency_date=datetime.datetime.strptime(
-                    entity.currency_date, "%Y-%m-%d"
-                ).date(),
+                currency_date=entity.currency_date,
                 price_in_pln=entity.price_in_pln,
             )
             try:
@@ -113,7 +108,7 @@ class SQLiteDatabaseConnector:
                         "amount": record.amount,
                         "currency": record.currency,
                         "currency_rate": record.currency_rate,
-                        "currency_date": record.currency_date.strftime("%Y-%m-%d"),
+                        "currency_date": record.currency_date,
                         "price_in_pln": record.price_in_pln,
                     }
                     for record in records
@@ -141,9 +136,6 @@ class SQLiteDatabaseConnector:
                         col.name: getattr(record, col.name)
                         for col in record.__table__.columns
                     }
-                    record_as_dict["currency_date"] = record_as_dict[
-                        "currency_date"
-                    ].strftime("%Y-%m-%d")
                     return record_as_dict
 
                 return None
@@ -188,9 +180,7 @@ class SQLiteDatabaseConnector:
             record.currency_rate = currency_rate or record.currency_rate
             record.price_in_pln = price_in_pln or record.price_in_pln
             record.currency_date = (
-                datetime.datetime.strptime(currency_date, "%Y-%m-%d").date()
-                if currency_date
-                else record.currency_date
+                currency_date if currency_date else record.currency_date
             )
 
             try:
