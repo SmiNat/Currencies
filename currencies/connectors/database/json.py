@@ -16,13 +16,6 @@ class JsonFileDatabaseConnector:
     """A connector class to retrieve and update data from a JSON database file."""
 
     def __init__(self) -> None:
-        """
-        Initializes the connector by reading data from the JSON file at the
-        specified URL.
-
-        Attributes:
-        - _data (dict): The in-memory representation of the database.
-        """
         self._data = self._read_data()
 
     @staticmethod
@@ -62,9 +55,9 @@ class JsonFileDatabaseConnector:
         entity = {
             "amount": entity.amount,
             "currency": entity.currency,
-            "rate": entity.currency_rate,
+            "currency_rate": entity.currency_rate,
+            "currency_date": entity.currency_date,
             "price_in_pln": entity.price_in_pln,
-            "date": entity.currency_rate_fetch_date,
         }
 
         # Check if currency with given data is already in the database
@@ -101,37 +94,39 @@ class JsonFileDatabaseConnector:
     def update(
         self,
         entity_id: int,
-        amount: float | None = None,
+        amount: float | int | None = None,
         currency: str | None = None,
-        rate: float | None = None,
+        currency_rate: float | None = None,
+        currency_date: str | None = None,
         price_in_pln: float | None = None,
-        date: str | None = None,
     ) -> str:
         """
         Updates the entity with the given id in the JSON database.
 
         Args:
         - entity_id (int): The ID of the entity to update.
-        - amount (Optional[float]): The price in source currency.
+        - amount (Optional[float | int]): The price in source currency.
         - currency (Optional[str]): The new currency code, if updating.
-        - rate (Optional[float]): The new exchange rate, if updating.
+        - currency_rate (Optional[float]): The new exchange rate, if updating.
+        - currency_date (Optional[str]): The new date, if updating.
         - price_in_pln (Optional[float]): The new price in PLN, if updating.
-        - date (Optional[str]): The new date, if updating.
         """
         entity = self._data.get(str(entity_id), None)
         if not entity:
             return f"No currency with id '{entity_id}' in the database."
         logger.debug("Database record to update: %s" % entity)
 
-        validate_currency_input_data(currency, date, rate, price_in_pln)
+        validate_currency_input_data(
+            amount, currency, currency_date, currency_rate, price_in_pln
+        )
 
         updated_entity = {
             "id": entity_id,
             "amount": amount or entity["amount"],
             "currency": currency or entity["currency"],
-            "rate": rate or entity["rate"],
+            "currency_rate": currency_rate or entity["currency_rate"],
+            "currency_date": currency_date or entity["currency_date"],
             "price_in_pln": price_in_pln or entity["price_in_pln"],
-            "date": date or entity["date"],
         }
 
         self._data[str(entity_id)] = updated_entity

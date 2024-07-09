@@ -3,16 +3,16 @@
         "id": 1,
         "amount": 10,
         "currency": "eur",
-        "rate": 4.6285,
-        "price_in_pln": 46.285,
-        "date": "2010-01-01"
+        "currency_rate": 4.6285,
+        "currency_date": "2010-01-01",
+        "price_in_pln": 46.285
     },
     "3": {
         "id": 3,
         "amount": 10,
         "currency": "eur",
-        "rate": 4.985,
-        "price_in_pln": 49.85,
-        "date": "2012-01-01"
+        "currency_rate": 4.985,
+        "currency_date": "2012-01-01",
+        "price_in_pln": 49.85
     }
 }

@@ -16,10 +16,10 @@ logger = logging.getLogger("currencies")
 class ConvertedPricePLN:
     """Data class representing a converted price in PLN."""
 
-    amount: float  # price_in_source_currency
+    amount: float | int  # price_in_source_currency
     currency: str
     currency_rate: float
-    currency_rate_fetch_date: str
+    currency_date: str
     price_in_pln: float
 
 
@@ -69,18 +69,18 @@ class PriceCurrencyConverterToPLN:
         return data["rate"], data["date"]
 
     def convert_to_pln(
-        self, currency: str, amount: float, source: str
+        self, amount: float | int, currency: str, source: str
     ) -> ConvertedPricePLN:
         """
         Converts a price from a specified currency to PLN based on the given source.
 
         Args:
+        - amount (float | int): The price in the source currency.
         - currency (str): The currency code (e.g., 'USD', 'EUR').
-        - amount (float): The price in the source currency.
         - source (str): The source of currency data ('JSON file' or 'API NBP').
         """
         validate_data_source(source)
-        validate_currency_input_data(currency, amount=amount)
+        validate_currency_input_data(amount, currency)
 
         if source.lower() == CurrencySource.JSON_FILE.value:
             rate, date = self.fetch_single_currency_from_local_database(currency)
@@ -91,8 +91,8 @@ class PriceCurrencyConverterToPLN:
             "amount": amount,
             "currency": currency,
             "currency_rate": rate,
+            "currency_date": date,
             "price_in_pln": round(amount * rate, 2),
-            "currency_rate_fetch_date": date,
         }
 
         entity = ConvertedPricePLN(**result)

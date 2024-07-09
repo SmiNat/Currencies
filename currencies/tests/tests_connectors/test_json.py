@@ -107,9 +107,9 @@ def test_save_new_entity(test_json_db: dict, test_db_path: str):
         saved_entity = connector.get_by_id(new_id)
         assert saved_entity is not None
         assert saved_entity["currency"] == "USD"
-        assert saved_entity["rate"] == 4.2
+        assert saved_entity["currency_rate"] == 4.2
         assert saved_entity["price_in_pln"] == 42.0
-        assert saved_entity["date"] == "2024-06-30"
+        assert saved_entity["currency_date"] == "2024-06-30"
 
 
 def test_save_new_entity_invalid_data_type(test_json_db: dict, test_db_path: str):
@@ -118,8 +118,8 @@ def test_save_new_entity_invalid_data_type(test_json_db: dict, test_db_path: str
         entity = {
             "price_in_currency": 10,
             "currency": "USD",
-            "rate": 4.2,
-            "date": "2024-06-30",
+            "currency_rate": 4.2,
+            "currency_date": "2024-06-30",
             "price_in_pln": 42,
         }
         with pytest.raises(TypeError) as exc_info:
@@ -141,8 +141,8 @@ def test_save_new_entity_already_in_db(test_json_db: dict, test_db_path: str):
         entity = ConvertedPricePLN(
             5,
             existing_data["currency"],
-            existing_data["rate"],
-            existing_data["date"],
+            existing_data["currency_rate"],
+            existing_data["currency_date"],
             existing_data["price_in_pln"],
         )
 
@@ -159,19 +159,19 @@ def test_update_entity(test_json_db: dict, test_db_path: str):
         new_rate = 4.8
 
         assert connector.get_by_id(entity_id) is not None
-        assert connector.get_by_id(entity_id)["rate"] != new_rate
+        assert connector.get_by_id(entity_id)["currency_rate"] != new_rate
         original_data = connector.get_by_id(entity_id)
 
-        result = connector.update(entity_id, rate=new_rate)
+        result = connector.update(entity_id, currency_rate=new_rate)
 
         data = original_data.copy()
-        data["rate"] = new_rate
+        data["currency_rate"] = new_rate
         exp_result = data
 
         updated_entity = connector.get_by_id(entity_id)
         assert "successfully updated" in result
         assert updated_entity is not None
-        assert updated_entity["rate"] == new_rate
+        assert updated_entity["currency_rate"] == new_rate
         assert updated_entity == exp_result
 
 
@@ -182,7 +182,7 @@ def test_update_entity_with_invalid_id(test_json_db: dict, test_db_path: str):
         new_rate = 4.8
 
         exp_result = f"No currency with id '{entity_id}' in the database"
-        result = connector.update(entity_id, rate=new_rate)
+        result = connector.update(entity_id, currency_rate=new_rate)
         assert exp_result in result
 
 
@@ -242,9 +242,9 @@ def test_update_entity_with_invalid_datato_update(
             connector.update(
                 entity_id,
                 currency=currency,
-                rate=rate,
+                currency_rate=rate,
                 price_in_pln=price_in_pln,
-                date=date,
+                currency_date=date,
             )
         assert exp_result in str(exc_info.value)
 

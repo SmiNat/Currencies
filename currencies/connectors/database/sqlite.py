@@ -67,10 +67,10 @@ class SQLiteDatabaseConnector:
                 session.query(CurrencyData)
                 .filter_by(
                     currency=entity.currency,
-                    rate=entity.currency_rate,
+                    currency_rate=entity.currency_rate,
                     price_in_pln=entity.price_in_pln,
-                    date=datetime.datetime.strptime(
-                        entity.currency_rate_fetch_date, "%Y-%m-%d"
+                    currency_date=datetime.datetime.strptime(
+                        entity.currency_date, "%Y-%m-%d"
                     ).date(),
                 )
                 .first()
@@ -86,9 +86,9 @@ class SQLiteDatabaseConnector:
             new_data = CurrencyData(
                 amount=entity.amount,
                 currency=entity.currency,
-                rate=entity.currency_rate,
-                date=datetime.datetime.strptime(
-                    entity.currency_rate_fetch_date, "%Y-%m-%d"
+                currency_rate=entity.currency_rate,
+                currency_date=datetime.datetime.strptime(
+                    entity.currency_date, "%Y-%m-%d"
                 ).date(),
                 price_in_pln=entity.price_in_pln,
             )
@@ -112,9 +112,9 @@ class SQLiteDatabaseConnector:
                         "id": record.id,
                         "amount": record.amount,
                         "currency": record.currency,
-                        "rate": record.rate,
+                        "currency_rate": record.currency_rate,
+                        "currency_date": record.currency_date.strftime("%Y-%m-%d"),
                         "price_in_pln": record.price_in_pln,
-                        "date": record.date.strftime("%Y-%m-%d"),
                     }
                     for record in records
                 ]
@@ -141,7 +141,9 @@ class SQLiteDatabaseConnector:
                         col.name: getattr(record, col.name)
                         for col in record.__table__.columns
                     }
-                    record_as_dict["date"] = record_as_dict["date"].strftime("%Y-%m-%d")
+                    record_as_dict["currency_date"] = record_as_dict[
+                        "currency_date"
+                    ].strftime("%Y-%m-%d")
                     return record_as_dict
 
                 return None
@@ -152,10 +154,10 @@ class SQLiteDatabaseConnector:
     def update(
         self,
         entity_id: int,
-        amount: float | None = None,
+        amount: float | int | None = None,
         currency: str | None = None,
-        date: str | None = None,
-        rate: float | None = None,
+        currency_date: str | None = None,
+        currency_rate: float | None = None,
         price_in_pln: float | None = None,
     ) -> str:
         """
@@ -163,11 +165,11 @@ class SQLiteDatabaseConnector:
 
         Args:
         - entity_id (int): The ID of the entity to update.
-        - amount (Optional[float]): A price in source currency.
+        - amount (Optional[float | int]): A price in source currency.
         - currency (Optional[str]): The new currency code, if updating.
-        - rate (Optional[float]): The new exchange rate, if updating.
+        - currency_rate (Optional[float]): The new exchange rate, if updating.
+        - currency_date (Optional[str]): The new date, if updating.
         - price_in_pln (Optional[float]): The new price in PLN, if updating.
-        - date (Optional[str]): The new date, if updating.
         """
         with self._get_session() as session:
             record = (
@@ -177,16 +179,18 @@ class SQLiteDatabaseConnector:
                 return f"No currency with id '{entity_id}' in the database."
             logger.debug("Database record to update: %s" % record.__dict__)
 
-            validate_currency_input_data(currency, date, rate, price_in_pln)
+            validate_currency_input_data(
+                amount, currency, currency_date, currency_rate, price_in_pln
+            )
 
             record.amount = amount or record.amount
             record.currency = currency or record.currency
-            record.rate = rate or record.rate
+            record.currency_rate = currency_rate or record.currency_rate
             record.price_in_pln = price_in_pln or record.price_in_pln
-            record.date = (
-                datetime.datetime.strptime(date, "%Y-%m-%d").date()
-                if date
-                else record.date
+            record.currency_date = (
+                datetime.datetime.strptime(currency_date, "%Y-%m-%d").date()
+                if currency_date
+                else record.currency_date
             )
 
             try:

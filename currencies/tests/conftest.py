@@ -33,17 +33,17 @@ TEST_DB = {
         "id": 1,
         "amount": 10,
         "currency": "eur",
-        "rate": 4.44,
+        "currency_rate": 4.44,
+        "currency_date": "2010-10-10",
         "price_in_pln": 22.2,
-        "date": "2010-10-10",
     },
     "3": {
         "id": 3,
         "amount": 5,
         "currency": "eur",
-        "rate": 4.65,
+        "currency_rate": 4.65,
+        "currency_date": "2012-02-02",
         "price_in_pln": 23.25,
-        "date": "2012-02-02",
     },
 }
 
@@ -169,15 +169,15 @@ def sqlite_db_initial_data():
         data1 = CurrencyData(
             amount=10,
             currency="GBP",
-            rate=5.1234,
-            date=datetime.date(2024, 6, 1),
+            currency_rate=5.1234,
+            currency_date=datetime.date(2024, 6, 1),
             price_in_pln=51.234,
         )
         data2 = CurrencyData(
             amount=10,
             currency="USD",
-            rate=4.22,
-            date=datetime.date(2020, 10, 10),
+            currency_rate=4.22,
+            currency_date=datetime.date(2020, 10, 10),
             price_in_pln=42.2,
         )
 

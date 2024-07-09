@@ -28,16 +28,16 @@ class CurrencyData(Base):
     id = Column(Integer, primary_key=True, index=True)
     amount = Column(Float, nullable=False)
     currency = Column(String(5), nullable=False)  # Assuming codes with 3-5 characters
-    rate = Column(Float, nullable=False)
-    date = Column(Date, nullable=False)
+    currency_rate = Column(Float, nullable=False)
+    currency_date = Column(Date, nullable=False)
     price_in_pln = Column(Float, nullable=False)
 
     __table_args__ = (
         Index(
             "idx_unique_currency_data",
             func.upper(currency),
-            rate,
-            date,
+            currency_rate,
+            currency_date,
             price_in_pln,
             unique=True,
         ),

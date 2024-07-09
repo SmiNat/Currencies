@@ -18,16 +18,16 @@ DATABASE_INITIAL_DATA = [
         "id": 1,
         "amount": 10,
         "currency": "GBP",
-        "rate": 5.1234,
-        "date": "2024-06-01",
+        "currency_rate": 5.1234,
+        "currency_date": "2024-06-01",
         "price_in_pln": 51.234,
     },
     {
         "id": 2,
         "amount": 10,
         "currency": "USD",
-        "rate": 4.22,
-        "date": "2020-10-10",
+        "currency_rate": 4.22,
+        "currency_date": "2020-10-10",
         "price_in_pln": 42.2,
     },
 ]
@@ -40,12 +40,6 @@ def test_init(db_session):
 
 def test_get_all(db_session, sqlite_db_initial_data):
     session = SQLiteDatabaseConnector(db_session)
-
-    # cp1 = ConvertedPricePLN(10, "USD", 4.3, "2024-06-01", 43)
-    # cp2 = ConvertedPricePLN(10, "EUR", 4.55, "2022-10-10", 45.5)
-
-    # session.save(cp1)
-    # session.save(cp2)
 
     exp_result = DATABASE_INITIAL_DATA
 
@@ -171,8 +165,8 @@ def test_save_invalid_data_type(db_session):
     session = SQLiteDatabaseConnector(db_session)
     entity = {
         "currency": "CHF",
-        "rate": 5.2,
-        "date": "2022-11-22",
+        "currency_rate": 5.2,
+        "currency_date": "2022-11-22",
         "price_in_pln": 52,
     }
     exp_response = "Entity must be a ConvertedPricePLN instance"
@@ -190,8 +184,8 @@ def test_save_if_data_already_in_db(db_session, sqlite_db_initial_data):
         db_session.query(CurrencyData)
         .filter_by(
             currency="USD",
-            rate=4.22,
-            date=datetime.date(2020, 10, 10),
+            currency_rate=4.22,
+            currency_date=datetime.date(2020, 10, 10),
             price_in_pln=42.2,
         )
         .first()
@@ -241,17 +235,17 @@ def test_update_if_no_record_in_db(db_session):
     [
         ({"currency": "invalid"}, CurrencyNotFoundError, "Invalid currency code"),
         (
-            {"date": datetime.date(2020, 10, 11)},
+            {"currency_date": datetime.date(2020, 10, 11)},
             TypeError,
             "Invalid data type for date attribute. Required type: string",
         ),
         (
-            {"date": "11-11-2020"},
+            {"currency_date": "11-11-2020"},
             ValueError,
             "Invalid date format. Required format: 'YYYY-MM-DD'",
         ),
         (
-            {"rate": "4.55"},
+            {"currency_rate": "4.55"},
             TypeError,
             "Invalid data type for rate attribute. Required type: float",
         ),

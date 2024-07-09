@@ -61,9 +61,18 @@ def test_validate_data_source(monkeypatch):
     )
 
 
+def test_validate_currency_input_data_invalid_amount_type():
+    with pytest.raises(TypeError) as exc_info:
+        validate_currency_input_data(amount="22.1")
+    assert (
+        "Invalid data type for amount attribute. Required type: float or integer"
+        in str(exc_info.value)
+    )
+
+
 def test_validate_currency_input_data_invalid_currency_type():
     with pytest.raises(TypeError) as exc_info:
-        validate_currency_input_data(1234)
+        validate_currency_input_data(currency=1234)
     assert "Invalid data type for currency attribute. Required type: string" in str(
         exc_info.value
     )
@@ -71,7 +80,7 @@ def test_validate_currency_input_data_invalid_currency_type():
 
 def test_validate_currency_input_data_invalid_currency_code():
     with pytest.raises(CurrencyNotFoundError) as exc_info:
-        validate_currency_input_data("ABCD")
+        validate_currency_input_data(currency="ABCD")
     assert "Invalid currency code" in str(exc_info.value)
 
 

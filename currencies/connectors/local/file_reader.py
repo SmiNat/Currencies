@@ -11,27 +11,14 @@ LOCAL_CURRENCY = LocalDatabaseUrl.CURRENCY_RATES_URL
 
 
 class CurrencyRatesDatabaseConnector:
-    """A connector class to retrieve currency rate data from a JSON file database."""
+    """A connector class to retrieve currency rate data from a local JSON file database."""
 
     def __init__(self) -> None:
-        """
-        Initializes the connector by reading data from the JSON file at
-        the specified URL.
-
-        Attributes:
-        - _data (dict): The in-memory representation of the database.
-        """
         self._data = self._read_data()
 
     @staticmethod
     def _read_data() -> dict:
-        """
-        Reads data from the JSON file specified by CURRENCY_RATES_URL.
-
-        Returns:
-        - dict: The data read from the JSON file. Returns an empty dictionary
-          if the file does not exist or an error occurs.
-        """
+        """Reads data from the JSON file specified by CURRENCY_RATES_URL."""
         if not os.path.exists(LOCAL_CURRENCY):
             raise FileNotFoundError("Unable to locate file: %s" % LOCAL_CURRENCY)
 
@@ -43,12 +30,7 @@ class CurrencyRatesDatabaseConnector:
             return {}
 
     def _write_data(self) -> None:
-        """
-        Writes the current _data to the JSON file.
-
-        Returns:
-        - None.
-        """
+        """Writes the current _data to the JSON file."""
         if not os.path.exists(LOCAL_CURRENCY):
             raise FileNotFoundError("Unable to locate file: %s" % LOCAL_CURRENCY)
         try:
@@ -59,14 +41,7 @@ class CurrencyRatesDatabaseConnector:
             raise
 
     def get_all(self) -> dict:
-        """
-        Retrieves all currency data from the database.
-
-        Returns:
-        - dict[str, list[dict[str, Any]]]: A dictionary where keys are currency
-          codes (e.g., 'EUR', 'CZK') and values are lists of dictionaries
-          with currency data.
-        """
+        """Retrieves all currency data from the database."""
         return self._data
 
     def get_currency_data(self, currency: str) -> list[dict]:
@@ -76,11 +51,6 @@ class CurrencyRatesDatabaseConnector:
         Args:
         - currency (str): The currency code given in ISO 4217 currency codes
           standard (e.g., 'USD') (case-insensitive).
-
-        Returns:
-        - list[dict[str, Any]]: A list of dictionaries representing data for
-          the specified currency. Returns an empty list if the currency
-          code is not found.
         """
         return self._data.get(currency.upper(), [])
 
@@ -91,11 +61,6 @@ class CurrencyRatesDatabaseConnector:
         Args:
         - currency (str): The currency code given in ISO 4217 currency codes
           standard (e.g., 'USD') (case-insensitive).
-
-        Returns:
-        - dict[str, Any]: A dictionary representing the latest exchange rate for
-          the specified currency, containing keys 'date' and 'rate'. Returns
-          an empty dictionary if no data is found.
         """
         rates = self.get_currency_data(currency)
         if not rates:
@@ -117,11 +82,8 @@ class CurrencyRatesDatabaseConnector:
         - currency (str): The currency code (e.g., 'EUR') to add/update.
         - date (str): Date in 'YYYY-MM-DD' format (e.g., '2020-10-30')
         - rate (float): Value of exchange rate.
-
-        Returns:
-            None.
         """
-        validate_currency_input_data(currency, date, rate)
+        validate_currency_input_data(currency=currency, date=date, rate=rate)
 
         currency = currency.upper()
         currency_data = {"date": date, "rate": rate}
@@ -162,9 +124,6 @@ class CurrencyRatesDatabaseConnector:
 
         Args:
         - currency (str): The currency code to delete (e.g., 'EUR').
-
-        Returns:
-        - str: A message indicating the result of the deletion operation.
         """
         if currency.upper() in self._data:
             del self._data[currency.upper()]
