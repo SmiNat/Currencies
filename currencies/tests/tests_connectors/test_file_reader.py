@@ -4,6 +4,7 @@ import pytest
 
 from currencies.connectors.local.file_reader import CurrencyRatesDatabaseConnector
 from currencies.exceptions import CurrencyNotFoundError
+from currencies.tests.conftest import CURRENCY_DB, TEST_CURRENCY_LOCAL_DB_URL
 
 
 def test_init():
@@ -11,10 +12,10 @@ def test_init():
     assert isinstance(connector, CurrencyRatesDatabaseConnector)
 
 
-def test_read_data_io_error(caplog, test_currency_local_db_path):
+def test_read_data_io_error(caplog):
     with patch(
         "currencies.connectors.local.file_reader.LOCAL_CURRENCY",
-        test_currency_local_db_path,
+        TEST_CURRENCY_LOCAL_DB_URL,
     ):
         with patch("builtins.open", side_effect=OSError("IO error")):
             connector = CurrencyRatesDatabaseConnector()
@@ -64,16 +65,16 @@ def test_get_all_from_currency_db_empty_db(mock_file_directory):
         assert exp_response == eur_data
 
 
-def test_get_currency_data(mock_file_directory, test_currency_local_db_content):
+def test_get_currency_data(mock_file_directory):
     connector = CurrencyRatesDatabaseConnector()
 
     # Test retrieving currency data for EUR
-    exp_response = test_currency_local_db_content["EUR"]
+    exp_response = CURRENCY_DB["EUR"]
     eur_data = connector.get_currency_data("EUR")
     assert exp_response == eur_data
 
     # Test retrieving currency data for CZK
-    exp_response = test_currency_local_db_content["CZK"]
+    exp_response = CURRENCY_DB["CZK"]
     czk_data = connector.get_currency_data("CZK")
     assert exp_response == czk_data
 

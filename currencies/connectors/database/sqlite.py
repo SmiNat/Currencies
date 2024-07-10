@@ -15,26 +15,25 @@ SQLITE_DATABASE_NAME = os.environ.get("SQLITE_DATABASE_NAME")
 class SQLiteDatabaseConnector:
     """A connector class to interact with the SQLite database."""
 
-    def __init__(self, session: Session = get_db()) -> None:
+    def __init__(self, session: Session | None = None) -> None:
         """
         Initializes the connector with the given session factory or the default
         SessionLocal().
 
         Attributes:
         - session (Session): The session factory for creating database sessions.
-          Defaults to SessionLocal if not provided.
+          Defaults to SessionLocal() if not provided.
         """
-        self.session = session
+        if session and not isinstance(session, Session):
+            raise TypeError(
+                "Invalid session initial attribute. Required type: Session."
+            )
+        self.session = session if session else get_db()
 
     @contextmanager
     def _get_session(self) -> Session:  # type: ignore
         """Provides a context manager for database sessions."""
         session = self.session
-
-        if not isinstance(session, Session):
-            raise TypeError(
-                "Invalid session initial attribute. Required type: Session."
-            )
 
         try:
             yield session
@@ -159,7 +158,6 @@ class SQLiteDatabaseConnector:
             )
             if not record:
                 return f"No currency with id '{entity_id}' in the database."
-
             logger.debug("Database record to update: %s" % record.__dict__)
 
             validate_currency_input_data(

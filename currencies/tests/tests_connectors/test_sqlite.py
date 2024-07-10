@@ -10,45 +10,41 @@ from currencies.connectors.database.sqlite import SQLiteDatabaseConnector
 from currencies.currency_converter import ConvertedPricePLN
 from currencies.database_config import CurrencyData
 from currencies.exceptions import CurrencyNotFoundError
+from currencies.tests.conftest import SQLITE_DB_INITIAL_DATA
 
 logger = logging.getLogger("currencies")
 
-DATABASE_INITIAL_DATA = [
-    {
-        "id": 1,
-        "amount": 10.0,
-        "currency": "GBP",
-        "currency_rate": 5.1234,
-        "currency_date": "2024-06-01",
-        "price_in_pln": 51.234,
-    },
-    {
-        "id": 2,
-        "amount": 10.0,
-        "currency": "USD",
-        "currency_rate": 4.22,
-        "currency_date": "2020-10-10",
-        "price_in_pln": 42.2,
-    },
-]
+
+def test_if_testing_db_is_empty(db_session: Session):
+    records = db_session.query(CurrencyData).count()
+    assert records == 0
 
 
-def test_init(db_session):
-    session = SQLiteDatabaseConnector(db_session)
+def test_init(db_session: Session):
+    session = SQLiteDatabaseConnector()
     assert isinstance(session, SQLiteDatabaseConnector)
 
 
-def test_get_all(db_session, sqlite_db_initial_data):
-    session = SQLiteDatabaseConnector(db_session)
+def test_init_with_invalid_session_argument():
+    exp_result = "Invalid session initial attribute. Required type: Session."
+    with pytest.raises(TypeError) as exc_info:
+        SQLiteDatabaseConnector("invalid")
+    assert exp_result in str(exc_info.value)
 
-    exp_result = DATABASE_INITIAL_DATA
+
+def test_get_all(
+    db_session: Session, sqlite_db_initial_data: tuple[CurrencyData, CurrencyData]
+):
+    session = SQLiteDatabaseConnector()
+
+    exp_result = SQLITE_DB_INITIAL_DATA
 
     result = session.get_all()
     assert result == exp_result
 
 
-def test_get_all_empty_db(db_session):
-    session = SQLiteDatabaseConnector(db_session)
+def test_get_all_empty_db(db_session: Session):
+    session = SQLiteDatabaseConnector()
 
     exp_result = []
 
@@ -56,16 +52,8 @@ def test_get_all_empty_db(db_session):
     assert result == exp_result
 
 
-def test_get_all_no_valid_session():
-    session = SQLiteDatabaseConnector("invalid")
-    exp_result = "Invalid session initial attribute. Required type: Session."
-    with pytest.raises(TypeError) as exc_info:
-        session.get_all()
-    assert exp_result in str(exc_info.value)
-
-
-def test_get_all_logs_error(db_session, caplog):
-    session = SQLiteDatabaseConnector(db_session)
+def test_get_all_logs_error(db_session: Session, caplog):
+    session = SQLiteDatabaseConnector()
 
     # Mock the session query to raise an exception
     original_query = session.session.query
@@ -87,18 +75,22 @@ def test_get_all_logs_error(db_session, caplog):
     ), "Expected log message not found in captured logs"
 
 
-def test_get_by_id(db_session, sqlite_db_initial_data):
-    session = SQLiteDatabaseConnector(db_session)
+def test_get_by_id(
+    db_session: Session, sqlite_db_initial_data: tuple[CurrencyData, CurrencyData]
+):
+    session = SQLiteDatabaseConnector()
     id = 1
 
-    exp_result = DATABASE_INITIAL_DATA[0]
+    exp_result = SQLITE_DB_INITIAL_DATA[0]
 
     result = session.get_by_id(id)
     assert result == exp_result
 
 
-def test_get_by_id_non_existing_record(db_session, sqlite_db_initial_data):
-    session = SQLiteDatabaseConnector(db_session)
+def test_get_by_id_non_existing_record(
+    db_session: Session, sqlite_db_initial_data: tuple[CurrencyData, CurrencyData]
+):
+    session = SQLiteDatabaseConnector()
     non_existing_id = 999
 
     exp_result = None
@@ -107,8 +99,8 @@ def test_get_by_id_non_existing_record(db_session, sqlite_db_initial_data):
     assert result == exp_result
 
 
-def test_get_by_id_with_invalid_id(db_session, sqlite_db_initial_data):
-    session = SQLiteDatabaseConnector(db_session)
+def test_get_by_id_with_invalid_id(db_session: Session, sqlite_db_initial_data):
+    session = SQLiteDatabaseConnector()
     non_existing_id = "invalid"
 
     exp_result = None
@@ -117,8 +109,8 @@ def test_get_by_id_with_invalid_id(db_session, sqlite_db_initial_data):
     assert result == exp_result
 
 
-def test_get_by_id_logs_error(db_session, caplog):
-    session = SQLiteDatabaseConnector(db_session)
+def test_get_by_id_logs_error(db_session: Session, caplog):
+    session = SQLiteDatabaseConnector()
 
     # Mock the session query to raise an exception
     original_query = session.session.query
@@ -140,8 +132,8 @@ def test_get_by_id_logs_error(db_session, caplog):
     ), "Expected log message not found in captured logs"
 
 
-def test_save(db_session):
-    session = SQLiteDatabaseConnector(db_session)
+def test_save(db_session: Session):
+    session = SQLiteDatabaseConnector()
     entity = ConvertedPricePLN(10, "CHF", 5.2, "2022-11-22", 52)
     db_record = (
         db_session.query(CurrencyData).filter(CurrencyData.currency == "CHF").first()
@@ -161,8 +153,8 @@ def test_save(db_session):
     assert db_session.query(CurrencyData).count() == 1
 
 
-def test_save_invalid_data_type(db_session):
-    session = SQLiteDatabaseConnector(db_session)
+def test_save_invalid_data_type(db_session: Session):
+    session = SQLiteDatabaseConnector()
     entity = {
         "currency": "CHF",
         "currency_rate": 5.2,
@@ -175,8 +167,10 @@ def test_save_invalid_data_type(db_session):
     assert exp_response in str(exc_info)
 
 
-def test_save_if_data_already_in_db(db_session, sqlite_db_initial_data):
-    session = SQLiteDatabaseConnector(db_session)
+def test_save_if_data_already_in_db(
+    db_session: Session, sqlite_db_initial_data: tuple[CurrencyData, CurrencyData]
+):
+    session = SQLiteDatabaseConnector()
     entity = ConvertedPricePLN(10, "USD", 4.22, "2020-10-10", 42.2)
 
     # Check if record with the same data exists in the database
@@ -202,11 +196,15 @@ def test_save_if_data_already_in_db(db_session, sqlite_db_initial_data):
     assert db_session.query(CurrencyData).count() == 2
 
 
-def test_update(db_session, sqlite_db_initial_data):
+def test_update(
+    db_session: Session, sqlite_db_initial_data: tuple[CurrencyData, CurrencyData]
+):
     session = SQLiteDatabaseConnector(db_session)
+
     record_id = 1
     db_record = db_session.query(CurrencyData).filter_by(id=record_id).first()
     assert db_record is not None
+    assert db_record.currency == sqlite_db_initial_data[0].currency == "GBP"
 
     new_currency = "CHF"
     assert db_record.currency != new_currency
@@ -214,11 +212,12 @@ def test_update(db_session, sqlite_db_initial_data):
 
     response = session.update(entity_id=record_id, currency=new_currency)
     assert exp_response in str(response)
+    db_record = db_session.query(CurrencyData).filter_by(id=record_id).first()
     assert db_record.currency == new_currency
 
 
-def test_update_if_no_record_in_db(db_session):
-    session = SQLiteDatabaseConnector(db_session)
+def test_update_if_no_record_in_db(db_session: Session):
+    session = SQLiteDatabaseConnector()
     record_id = 1
     db_record = db_session.query(CurrencyData).filter_by(id=record_id).first()
     assert db_record is None
@@ -258,7 +257,7 @@ def test_update_invalid_data(
     error: Exception,
     message: str,
 ):
-    session = SQLiteDatabaseConnector(db_session)
+    session = SQLiteDatabaseConnector()
     record_id = 1
     db_record = db_session.query(CurrencyData).filter_by(id=record_id).first()
     assert db_record is not None
@@ -268,8 +267,10 @@ def test_update_invalid_data(
     assert message in str(exc_info)
 
 
-def test_delete(db_session, sqlite_db_initial_data):
-    session = SQLiteDatabaseConnector(db_session)
+def test_delete(
+    db_session: Session, sqlite_db_initial_data: tuple[CurrencyData, CurrencyData]
+):
+    session = SQLiteDatabaseConnector()
     record_id = 1
     db_record = db_session.query(CurrencyData).filter_by(id=record_id).first()
     assert db_record is not None
@@ -281,8 +282,10 @@ def test_delete(db_session, sqlite_db_initial_data):
     assert db_record is None
 
 
-def test_delete_no_record_in_db(db_session, sqlite_db_initial_data):
-    session = SQLiteDatabaseConnector(db_session)
+def test_delete_no_record_in_db(
+    db_session: Session, sqlite_db_initial_data: tuple[CurrencyData, CurrencyData]
+):
+    session = SQLiteDatabaseConnector()
     record_id = 999  # no existing record id
     db_record = db_session.query(CurrencyData).filter_by(id=record_id).first()
     assert db_record is None
@@ -292,7 +295,11 @@ def test_delete_no_record_in_db(db_session, sqlite_db_initial_data):
     assert exp_response in response
 
 
-def test_delete_currency_with_exception(db_session, sqlite_db_initial_data, caplog):
+def test_delete_currency_with_exception(
+    db_session: Session,
+    sqlite_db_initial_data: tuple[CurrencyData, CurrencyData],
+    caplog,
+):
     session = SQLiteDatabaseConnector(db_session)
     record_id = 1
     db_record = db_session.query(CurrencyData).filter_by(id=record_id).first()
