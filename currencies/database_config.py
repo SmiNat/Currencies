@@ -1,8 +1,19 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, Date, Float, Index, Integer, String, create_engine, func
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    create_engine,
+    func,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker, validates
+
+from .utils import validate_date
 
 load_dotenv()
 
@@ -26,23 +37,40 @@ class CurrencyData(Base):
     __tablename__ = "currency_data"
 
     id = Column(Integer, primary_key=True, index=True)
-    # price_in_source_currency = Column(Float, nullable=False)  # ommited, as in database.json
+    amount = Column(Float, nullable=False)
     currency = Column(String(5), nullable=False)  # Assuming codes with 3-5 characters
-    rate = Column(Float, nullable=False)
-    date = Column(Date, nullable=False)
+    currency_rate = Column(Float, nullable=False)
+    currency_date = Column(String, nullable=False)  # 'YYYY-MM-DD' format allowed
     price_in_pln = Column(Float, nullable=False)
+    time_created = Column(DateTime(timezone=True), server_default=func.now())
+    time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
     __table_args__ = (
         Index(
             "idx_unique_currency_data",
             func.upper(currency),
-            rate,
-            date,
+            currency_rate,
+            currency_date,
             price_in_pln,
             unique=True,
         ),
+        {"info": {"hidden_columns": ["time_created", "time_updated"]}},
     )
+
+    @validates("currency_date")
+    def validate_date(self, key, date):
+        validate_date(date)
+        return date
 
 
 # Creating database tables
 Base.metadata.create_all(bind=engine)
+
+
+# Creating a database connection
+def get_db():
+    db = SessionLocal()
+    try:
+        return db
+    finally:
+        db.close()

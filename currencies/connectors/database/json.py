@@ -3,81 +3,58 @@ import logging
 import os
 from collections import OrderedDict
 
-from ...currency_converter import ConvertedPricePLN
-from ...utils import validate_currency_input_data
+from ...utils import ConvertedPricePLN, validate_currency_input_data
 
 logger = logging.getLogger("currencies")
 
 
-JSON_DATABASE_NAME = os.environ.get("JSON_DATABASE_NAME")
+JSON_DATABASE = os.environ.get("JSON_DATABASE")
+
+
+def get_local_db():
+    return JSON_DATABASE
 
 
 class JsonFileDatabaseConnector:
     """A connector class to retrieve and update data from a JSON database file."""
 
     def __init__(self) -> None:
-        """
-        Initializes the connector by reading data from the JSON file at the
-        specified URL.
-
-        Attributes:
-        - _data (dict): The in-memory representation of the database.
-        """
         self._data = self._read_data()
 
     @staticmethod
     def _read_data() -> dict:
-        """
-        Reads data from the JSON file.
-
-        Returns:
-        - dict[str, Any]: The data read from the JSON file. Returns an empty
-          dictionary if the file does not exist or an error occurs.
-        """
-        if not os.path.exists(JSON_DATABASE_NAME):
-            raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
+        """Reads data from the JSON file."""
+        if not os.path.exists(get_local_db()):
+            raise FileNotFoundError("Unable to locate file: %s" % get_local_db())
         try:
-            with open(JSON_DATABASE_NAME, "r") as file:
+            with open(get_local_db(), "r") as file:
                 return json.load(file)
         except (json.JSONDecodeError, IOError) as e:
             logger.error("Error reading data: %s", {e})
             return {}
 
     def _write_data(self) -> None:
-        """
-        Writes the current state of the in-memory database (_data) to the JSON file.
-
-        Returns:
-        - None.
-        """
-        if not os.path.exists(JSON_DATABASE_NAME):
-            raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
+        """Writes the current state of the in-memory database (_data) to the JSON file."""
+        if not os.path.exists(get_local_db()):
+            raise FileNotFoundError("Unable to locate file: %s" % get_local_db())
         try:
-            with open(JSON_DATABASE_NAME, "w") as file:
+            with open(get_local_db(), "w") as file:
                 json.dump(self._data, file, indent=4)
         except IOError as e:
-            logger.error("Error writing data to %s: %s", JSON_DATABASE_NAME, e)
+            logger.error("Error writing data to %s: %s", get_local_db(), e)
             raise
 
     def save(self, entity: ConvertedPricePLN) -> int:
-        """
-        Saves a new entity to the JSON database file.
-
-        Args:
-        - entity (ConvertedPricePLN): An instance of ConvertedPricePLN to save
-          in the database.
-
-        Returns:
-        - int: The ID of the saved entity.
-        """
+        """Saves a new entity to the JSON database file."""
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be of type ConvertedPricePLN.")
 
         entity = {
+            "amount": entity.amount,
             "currency": entity.currency,
-            "rate": entity.currency_rate,
+            "currency_rate": entity.currency_rate,
+            "currency_date": entity.currency_date,
             "price_in_pln": entity.price_in_pln,
-            "date": entity.currency_rate_fetch_date,
         }
 
         # Check if currency with given data is already in the database
@@ -99,61 +76,49 @@ class JsonFileDatabaseConnector:
         return new_id
 
     def get_all(self) -> list[dict]:
-        """
-        Retrieves all entities from the JSON file database.
-
-        Returns:
-        - list[dict[str, Any]]: A list of all entities in the database.
-        """
+        """Retrieves all entities from the JSON file database."""
         return list(self._data.values())
 
     def get_by_id(self, entity_id: int) -> dict | None:
-        """
-        Retrieves an entity by its ID.
-
-        Args:
-        - entity_id (int): The ID of the entity to retrieve.
-
-        Returns:
-        - [dict[str, Any] | None]: The entity with the specified ID,
-          or None if it does not exist.
-        """
+        """Retrieves an entity by its ID."""
         return self._data.get(str(entity_id), None)
 
     def update(
         self,
         entity_id: int,
+        amount: float | int | None = None,
         currency: str | None = None,
-        rate: float | None = None,
+        currency_rate: float | None = None,
+        currency_date: str | None = None,
         price_in_pln: float | None = None,
-        date: str | None = None,
     ) -> str:
         """
         Updates the entity with the given id in the JSON database.
 
         Args:
         - entity_id (int): The ID of the entity to update.
+        - amount (Optional[float | int]): The price in source currency.
         - currency (Optional[str]): The new currency code, if updating.
-        - rate (Optional[float]): The new exchange rate, if updating.
+        - currency_rate (Optional[float]): The new exchange rate, if updating.
+        - currency_date (Optional[str]): The new date, if updating.
         - price_in_pln (Optional[float]): The new price in PLN, if updating.
-        - date (Optional[str]): The new date, if updating.
-
-        Returns:
-        - str: A message indicating the result of the update operation.
         """
         entity = self._data.get(str(entity_id), None)
         if not entity:
             return f"No currency with id '{entity_id}' in the database."
         logger.debug("Database record to update: %s" % entity)
 
-        validate_currency_input_data(currency, date, rate, price_in_pln)
+        validate_currency_input_data(
+            amount, currency, currency_date, currency_rate, price_in_pln
+        )
 
         updated_entity = {
             "id": entity_id,
+            "amount": amount or entity["amount"],
             "currency": currency or entity["currency"],
-            "rate": rate or entity["rate"],
+            "currency_rate": currency_rate or entity["currency_rate"],
+            "currency_date": currency_date or entity["currency_date"],
             "price_in_pln": price_in_pln or entity["price_in_pln"],
-            "date": date or entity["date"],
         }
 
         self._data[str(entity_id)] = updated_entity
@@ -163,15 +128,7 @@ class JsonFileDatabaseConnector:
         return f"Currency with id '{entity_id}' was successfully updated."
 
     def delete(self, entity_id: int) -> str:
-        """
-        Deletes a specific currency data record by its ID.
-
-        Args:
-        - entity_id (int): The ID of the currency data record to delete.
-
-        Returns:
-        - str: A message indicating the result of the deletion operation.
-        """
+        """Deletes a specific currency data record by its ID."""
         try:
             del self._data[str(entity_id)]
             self._write_data()

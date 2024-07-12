@@ -4,20 +4,14 @@ import os
 from unittest.mock import patch
 
 import pytest
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-from currencies.config import Config
-
-load_dotenv()
-
-# uwaga, w przypadku wykorzystania zmiennych środowiskowych do ustanowienia testowych warunków,
-# należy dopasować zmienną odpowiedzialną za wybór środowiska (eg. ENV_STATE)
-# oraz zbudować mechanizm uzależniający prowadzenie testów na wybranym środowisku
 os.environ["ENV_STATE"] = "test"  # tu: łącze nieaktywne
 # tu: niezbędne łącza do plików testowych zostały określone z niniejszym pliku
 
-from currencies.database_config import Base, CurrencyData, sessionmaker  # noqa: E402
+from currencies.config import Config  # noqa: E402
+from currencies.database_config import Base, CurrencyData  # noqa: E402
 
 TEST_DB_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -28,23 +22,47 @@ TEST_DB_SQLITE_URL = f"sqlite:///{TEST_DB_SQLITE_PATH}"
 
 TEST_CURRENCY_LOCAL_DB_URL = os.path.join(TEST_DB_DIR, "currency_db.json")
 
-TEST_DB = {
+JSON_DB_INITIAL_DATA = {
     "1": {
         "id": 1,
+        "amount": 10,
         "currency": "eur",
-        "rate": 4.44,
+        "currency_rate": 4.44,
+        "currency_date": "2010-10-10",
         "price_in_pln": 22.2,
-        "date": "2010-10-10",
     },
     "3": {
         "id": 3,
+        "amount": 5,
         "currency": "eur",
-        "rate": 4.65,
+        "currency_rate": 4.65,
+        "currency_date": "2012-02-02",
         "price_in_pln": 23.25,
-        "date": "2012-02-02",
     },
 }
 
+SQLITE_DB_INITIAL_DATA = [
+    {
+        "id": 1,
+        "amount": 10.0,
+        "currency": "GBP",
+        "currency_rate": 5.1234,
+        "currency_date": "2024-06-01",
+        "price_in_pln": 51.234,
+        "time_created": datetime.datetime.now(),
+        "time_updated": None,
+    },
+    {
+        "id": 2,
+        "amount": 5.0,
+        "currency": "ISK",
+        "currency_rate": 2.8562,
+        "currency_date": "2020-10-10",
+        "price_in_pln": 14.28,
+        "time_created": datetime.datetime.now(),
+        "time_updated": None,
+    },
+]
 
 CURRENCY_DB = {
     "EUR": [{"date": "2022-10-10", "rate": 4.25}, {"date": "2022-01-30", "rate": 4.05}],
@@ -56,78 +74,8 @@ clean_test_db = True
 clean_currency_db = True
 
 
-@pytest.fixture
-def test_db_path():
-    return TEST_DB_JSON_URL
-
-
-@pytest.fixture
-def test_db_content():
-    return TEST_DB
-
-
-@pytest.fixture
-def test_json_db(test_db_path):
-    os.makedirs(TEST_DB_DIR, exist_ok=True)
-
-    with open(test_db_path, "w") as file:
-        json.dump(TEST_DB, file, indent=4)
-
-    with open(test_db_path, "r") as file:
-        yield json.load(file)
-
-
-@pytest.fixture(autouse=clean_test_db, scope="function")
-def clean_test_json_db():
-    try:
-        yield
-    finally:
-        if os.path.exists(TEST_DB_JSON_URL):
-            os.remove(TEST_DB_JSON_URL)
-
-
-@pytest.fixture
-def test_currency_local_db_path():
-    return TEST_CURRENCY_LOCAL_DB_URL
-
-
-@pytest.fixture
-def test_currency_local_db_content():
-    return CURRENCY_DB
-
-
-@pytest.fixture
-def currency_load_db(test_currency_local_db_path):
-    os.makedirs(TEST_DB_DIR, exist_ok=True)
-
-    with open(test_currency_local_db_path, "w") as file:
-        json.dump(CURRENCY_DB, file, indent=4)
-
-    with open(test_currency_local_db_path, "r") as file:
-        yield json.load(file)
-
-
-@pytest.fixture
-def mock_file_directory(test_currency_local_db_path):
-    with patch(
-        "currencies.connectors.local.file_reader.LOCAL_CURRENCY",
-        test_currency_local_db_path,
-    ):
-        yield
-
-
-@pytest.fixture(autouse=clean_currency_db, scope="function")
-def clean_currency_load_db(currency_load_db):
-    try:
-        yield
-    finally:
-        if os.path.exists(TEST_CURRENCY_LOCAL_DB_URL):
-            os.remove(TEST_CURRENCY_LOCAL_DB_URL)
-
-
 # Creating test.sqlite database instead of using application db (database.sqlite)
 engine = create_engine(
-    # url=config.DATABASE_URL,  # [opcjonalnie] skonfigurowanie lokalizacji w pliku config
     url=str(TEST_DB_SQLITE_URL),
     connect_args={"check_same_thread": False},
     echo=False,
@@ -141,11 +89,44 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 # Overriding database connection
 @pytest.fixture
-def db_session():
+def db_session(monkeypatch):
     """Sets a clean db session for each test."""
+    # from contextlib import contextmanager
+
+    # @contextmanager
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            return db
+        finally:
+            db.close()
+
+    # Use monkeypatch to override get_db with the override_get_db
+    monkeypatch.setattr("currencies.database_config.get_db", override_get_db)
+    monkeypatch.setattr("currencies.connectors.database.sqlite.get_db", override_get_db)
+
+    # Yield the session for test use
     db = TestingSessionLocal()
     try:
         yield db
+    finally:
+        db.close()
+
+
+@pytest.fixture
+def sqlite_db_initial_data():
+    """Fixture to populate the test_db.sqlite with initial data."""
+    db = TestingSessionLocal()
+    try:
+        # Insert records into the test_db.sqlite
+        data1 = CurrencyData(**SQLITE_DB_INITIAL_DATA[0])
+        data2 = CurrencyData(**SQLITE_DB_INITIAL_DATA[1])
+
+        db.add_all([data1, data2])
+        db.commit()
+        db.refresh(data1)
+        db.refresh(data2)
+        return data1, data2
     finally:
         db.close()
 
@@ -159,33 +140,62 @@ def clean_sqlite_db():
 
 
 @pytest.fixture
-def sqlite_db_initial_data():
-    """Fixture to populate the test_db.sqlite with initial data."""
-    db = TestingSessionLocal()
-    try:
-        # Insert records into the test_db.sqlite
-        data1 = CurrencyData(
-            currency="GBP",
-            rate=5.1234,
-            date=datetime.date(2024, 6, 1),
-            price_in_pln=51.234,
-        )
-        data2 = CurrencyData(
-            currency="USD",
-            rate=4.22,
-            date=datetime.date(2020, 10, 10),
-            price_in_pln=42.2,
-        )
+def json_db_path():
+    return TEST_DB_JSON_URL
 
-        db.add(data1)
-        db.commit()
-        db.add(data2)
-        db.commit()
-        db.refresh(data1)
-        db.refresh(data2)
-        return data1, data2
+
+@pytest.fixture
+def json_db_content():
+    return JSON_DB_INITIAL_DATA
+
+
+@pytest.fixture
+def json_db(json_db_path):
+    os.makedirs(TEST_DB_DIR, exist_ok=True)
+
+    with open(json_db_path, "w") as file:
+        json.dump(JSON_DB_INITIAL_DATA, file, indent=4)
+
+    with open(json_db_path, "r") as file:
+        yield json.load(file)
+
+
+@pytest.fixture(autouse=clean_test_db, scope="function")
+def clean_json_db():
+    try:
+        yield
     finally:
-        db.close()
+        if os.path.exists(TEST_DB_JSON_URL):
+            os.remove(TEST_DB_JSON_URL)
+
+
+@pytest.fixture
+def currency_load_db():
+    os.makedirs(TEST_DB_DIR, exist_ok=True)
+
+    with open(TEST_CURRENCY_LOCAL_DB_URL, "w") as file:
+        json.dump(CURRENCY_DB, file, indent=4)
+
+    with open(TEST_CURRENCY_LOCAL_DB_URL, "r") as file:
+        yield json.load(file)
+
+
+@pytest.fixture
+def mock_file_directory():
+    with patch(
+        "currencies.connectors.local.file_reader.LOCAL_CURRENCY",
+        TEST_CURRENCY_LOCAL_DB_URL,
+    ):
+        yield
+
+
+@pytest.fixture(autouse=clean_currency_db, scope="function")
+def clean_currency_load_db(currency_load_db):
+    try:
+        yield
+    finally:
+        if os.path.exists(TEST_CURRENCY_LOCAL_DB_URL):
+            os.remove(TEST_CURRENCY_LOCAL_DB_URL)
 
 
 @pytest.fixture()

@@ -1,9 +1,21 @@
 import datetime
+from dataclasses import dataclass
 
 from currency_codes import get_all_currencies
 
 from .enums import CurrencySource, DatabaseMapping
 from .exceptions import CurrencyNotFoundError
+
+
+@dataclass(frozen=True)
+class ConvertedPricePLN:
+    """Data class representing a converted price in PLN."""
+
+    amount: float | int  # price in source currency
+    currency: str
+    currency_rate: float
+    currency_date: str
+    price_in_pln: float
 
 
 def get_available_data_sources():
@@ -12,15 +24,6 @@ def get_available_data_sources():
 
 
 def validate_data_source(source: str) -> None:
-    """
-    Validate the data source value.
-
-    Parameters:
-    - source (str): The data source to be validated.
-
-    Raises:
-    - ValueError: If the data source is not valid.
-    """
     available_sources = get_available_data_sources()
     if source.lower() not in available_sources:
         raise ValueError(
@@ -29,17 +32,6 @@ def validate_data_source(source: str) -> None:
 
 
 def validate_date(date: str) -> None:
-    """
-    Validate the currency data format and type.
-
-    Parameters:
-    - date (str): Date in 'YYYY-MM-DD' format.
-
-    Raises:
-    - TypeError: If date is not a string.
-    - ValueError: If date is not in format: YYYY-MM-DD.
-    """
-
     if isinstance(date, str):
         try:
             datetime.datetime.strptime(date, "%Y-%m-%d").date()
@@ -52,23 +44,18 @@ def validate_date(date: str) -> None:
 
 
 def validate_currency_input_data(
+    amount: float | int | None = None,
     currency: str | None = None,
     date: str | None = None,
     rate: float | None = None,
     price: float | int | None = None,
 ):
-    """
-    Validate the currency input data.
+    if amount:
+        if not isinstance(amount, (float, int)):
+            raise TypeError(
+                "Invalid data type for amount attribute. Required type: float or integer."
+            )
 
-    Parameters:
-    - currency (str): Currency code or None.
-    - date (str): Date in 'YYYY-MM-DD' format or None.
-    - rate (float): Currency rate or None.
-
-    Raises:
-    - TypeError: If parameters are of the wrong type.
-    - CurrencyNotFoundError: If the currency code is invalid.
-    """
     if currency:
         if not isinstance(currency, str):
             raise TypeError(
@@ -99,7 +86,6 @@ def validate_currency_input_data(
 
 
 def list_of_all_currency_codes() -> list:
-    """Returns list of all currency codes."""
     return [currency.code for currency in get_all_currencies() if currency.code]
 
 

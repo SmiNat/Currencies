@@ -40,9 +40,7 @@ class DatabaseError(Exception):
     Exception raised when a database URL cannot be set.
     """
 
-    def __init__(self):
-        message = (
-            "Unable to set proper connector to the database. "
-            "Check the environment settings."
-        )
+    def __init__(self, message: str | None = None):
+        default = "Unable to set proper connector to the database. Check the environment settings."
+        message = message if message else default
         super().__init__(message)
