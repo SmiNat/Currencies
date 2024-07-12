@@ -1,49 +1,39 @@
-#### Autor: Natalia Śmieja
+# Project
 
-# Projekt
-Skrypt do przeliczania wartości wybranej waluty do PLN według aktualnego kursu walut.
+Script to convert the value of the selected currency to PLN according to the available
+exchange rate.
 
-Źródła danych dla kursu walut:
-1) lokalna baza danych (plik: currency_rates.json)
-2) API NBP (tabela A, http://api.nbp.pl/)
+Data sources for exchange rates:
 
-Skrypt umożliwia (klasa PriceCurrencyConverterToPLN):
-- pobranie kursów walut z jednego z dwóch źródeł
-- przeliczenie kwoty w wybranej walucie na wartość w PLN i automatyczne zapisanie
-  danych do bazy danych w pliku database.json lub database.sqlite (w zależności
-  od wybranych ustawień środowiskowych)
+1) local database (file: currency_rates.json)
+2) NBP API (table A, http://api.nbp.pl/)
 
-Skrypt posiada:
-1) łącznik do lokalnej bazy danych SQLite (klasa SQLiteDatabaseConnector)
-2) łącznik do lokalnej bazy danych JSON (klasa JsonFileDatabaseConnector)
-- obie klasy umożliwiają wykonywanie podstawowych operacji na bazach danych (CRUD)
-  celem rejestracji wartości dla przeliczanej waluty
-3) łącznik do lokalnej bazy z kursami walut (klasa CurrencyRatesDatabaseConnector)
-- klasa umożliwia zarządzanie bazą danych z dziennymi kursami walut
+The script allows (PriceCurrencyConverterToPLN class):
 
+- downloading currency rates from one of two sources (mentioned above)
+- conversion of the amount in the selected currency into PLN and automatic saving
+  data to the database in the database.json or database.sqlite file (depending on
+  on selected environmental settings - see: config.py file)
 
-# Uruchomienie projektu
-By korzystać ze skryptu należy:
-1) pobrać repozytorium z GitHub
-2) zainstalować niezbędne biblioteki (plik requirements.txt)
-3) skonfigurować zmienne środowiskowe (patrz: plik .env.example)
-4) zainicjować klasę poprzez stworzenie jej instancji celem wykorzystania metod danej klasy
+The script operates on:
+
+1) connector to local SQLite database (SQLiteDatabaseConnector class)
+2) connector to local JSON database (JsonFileDatabaseConnector class)
+- both classes enable basic database operations (CRUD) to record the value for
+  the currency being converted
+3) connector to the local database with currency rates (CurrencyRatesDatabaseConnector class)
+- the class allows you to manage a database with daily currency rates
 
 
-## Wymagane
+# Launch the project
+
+To use the script you need to:
+
+1) download the repository from GitHub
+2) install the necessary libraries (requirements.txt file)
+3) configure environment variables (see .env.example file)
+4) initialize a class by creating an instance of it to use the methods of a given class
+
+
+## Required
 Python 3.10
-
-## Dalsze możliwe ulepszanie kodu
-
-- do zasatnowiania, czy podczas zapisywania nowego rekordu do bazy danych nie dać możliwości zapisania danych w postaci odpowiedniego słownika (obecnie przyjmowane są jedynie dane w postaci instancji klasy ConvertedPricePLN) - mowa o metodach save() w json.py, sqlite.py
-
-- do zastanowienia, ujednolicenie by klasa ConvertedPricePLN (z atrybutami: "currency", "currency_rate", "currency_rate_fetch_date", "price_in_pln", "price_in_source_currency") miała takie same nazwy atrybutów jak dane zapisywane w bazie danych ["currency", "rate", "price_in_pln", "date"] - wówczas rozpaowanie klasy ConvertedPricePLN do bazy danych z modelem CurrencyData byłoby znacznie łatwiejsze
-
-- krok do wdrożenia: zamienić metody operujące na bazach danych na funkcje asynchroniczne (doczytać jak to działa na plikach bazodanowych i jak działa biblioteka asyncio), przjeść na asynchroniczne pobieranie danych z API NBP
-
-- klasa ConvertedPricePLN w pliku currency_converter.py - do rozważenia czy nie zmianić
-  atrybutu price_in_pln: float na metodę obliczającą ten atrybut na podstawie pozostałych danych,
-  albo dodać walidację:
-  def _validate_price_in_pln(self):
-        if not self.price_in_pln == round(self.price_in_source_currency * self.currency_rate, 2):
-            raise ValueError("Computed price_in_pln does not match expected value.")
