@@ -9,26 +9,14 @@ from ...utils import ConvertedPricePLN, validate_currency_input_data
 
 logger = logging.getLogger("currencies")
 
-SQLITE_DATABASE_NAME = os.environ.get("SQLITE_DATABASE_NAME")
+SQLITE_DATABASE = os.environ.get("SQLITE_DATABASE")
 
 
 class SQLiteDatabaseConnector:
     """A connector class to interact with the SQLite database."""
 
-    def __init__(self, session: Session | None = None) -> None:
-        """
-        Initializes the connector with the given session factory or the default
-        SessionLocal().
-
-        Attributes:
-        - session (Session): The session factory for creating database sessions.
-          Defaults to SessionLocal() if not provided.
-        """
-        if session and not isinstance(session, Session):
-            raise TypeError(
-                "Invalid session initial attribute. Required type: Session."
-            )
-        self.session = session if session else get_db()
+    def __init__(self) -> None:
+        self.session = get_db()
 
     @contextmanager
     def _get_session(self) -> Session:  # type: ignore
@@ -45,13 +33,7 @@ class SQLiteDatabaseConnector:
             session.close()
 
     def save(self, entity: ConvertedPricePLN) -> int:
-        """
-        Adds a new currency data record to the database.
-
-        Args:
-        - entity (ConvertedPricePLN): An instance of ConvertedPricePLN to add
-          to the database.
-        """
+        """Adds a new currency data record to the SQLITE database."""
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be a ConvertedPricePLN instance.")
 
@@ -88,7 +70,7 @@ class SQLiteDatabaseConnector:
                 raise
 
     def get_all(self) -> list[dict]:
-        """Retrieves all currency data records from the database."""
+        """Retrieves all currency data records from the SQLITE database."""
         with self._get_session() as session:
             try:
                 records = session.query(CurrencyData).all()
@@ -108,12 +90,7 @@ class SQLiteDatabaseConnector:
                 raise
 
     def get_by_id(self, entity_id: int) -> dict | None:
-        """
-        Retrieves a specific currency data record by ID.
-
-        Args:
-        - entity_id (int): The ID of the currency data record to retrieve.
-        """
+        """Retrieves a specific currency data record from the SQLITE database."""
         with self._get_session() as session:
             try:
                 record = (
@@ -180,12 +157,7 @@ class SQLiteDatabaseConnector:
                 raise
 
     def delete(self, entity_id: int) -> str:
-        """
-        Deletes a specific currency data record by its ID.
-
-        Args:
-        - entity_id (int): The ID of the currency data record to delete.
-        """
+        """Deletes a currency data record from the SQLITE database."""
         with self._get_session() as session:
             try:
                 data = (

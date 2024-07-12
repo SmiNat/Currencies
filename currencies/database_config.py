@@ -1,7 +1,16 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import Column, Float, Index, Integer, String, create_engine, func
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    create_engine,
+    func,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker, validates
 
 from .utils import validate_date
@@ -33,6 +42,8 @@ class CurrencyData(Base):
     currency_rate = Column(Float, nullable=False)
     currency_date = Column(String, nullable=False)  # 'YYYY-MM-DD' format allowed
     price_in_pln = Column(Float, nullable=False)
+    time_created = Column(DateTime(timezone=True), server_default=func.now())
+    time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
     __table_args__ = (
         Index(
@@ -43,6 +54,7 @@ class CurrencyData(Base):
             price_in_pln,
             unique=True,
         ),
+        {"info": {"hidden_columns": ["time_created", "time_updated"]}},
     )
 
     @validates("currency_date")

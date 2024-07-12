@@ -8,7 +8,11 @@ from ...utils import ConvertedPricePLN, validate_currency_input_data
 logger = logging.getLogger("currencies")
 
 
-JSON_DATABASE_NAME = os.environ.get("JSON_DATABASE_NAME")
+JSON_DATABASE = os.environ.get("JSON_DATABASE")
+
+
+def get_local_db():
+    return JSON_DATABASE
 
 
 class JsonFileDatabaseConnector:
@@ -20,10 +24,10 @@ class JsonFileDatabaseConnector:
     @staticmethod
     def _read_data() -> dict:
         """Reads data from the JSON file."""
-        if not os.path.exists(JSON_DATABASE_NAME):
-            raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
+        if not os.path.exists(get_local_db()):
+            raise FileNotFoundError("Unable to locate file: %s" % get_local_db())
         try:
-            with open(JSON_DATABASE_NAME, "r") as file:
+            with open(get_local_db(), "r") as file:
                 return json.load(file)
         except (json.JSONDecodeError, IOError) as e:
             logger.error("Error reading data: %s", {e})
@@ -31,23 +35,17 @@ class JsonFileDatabaseConnector:
 
     def _write_data(self) -> None:
         """Writes the current state of the in-memory database (_data) to the JSON file."""
-        if not os.path.exists(JSON_DATABASE_NAME):
-            raise FileNotFoundError("Unable to locate file: %s" % JSON_DATABASE_NAME)
+        if not os.path.exists(get_local_db()):
+            raise FileNotFoundError("Unable to locate file: %s" % get_local_db())
         try:
-            with open(JSON_DATABASE_NAME, "w") as file:
+            with open(get_local_db(), "w") as file:
                 json.dump(self._data, file, indent=4)
         except IOError as e:
-            logger.error("Error writing data to %s: %s", JSON_DATABASE_NAME, e)
+            logger.error("Error writing data to %s: %s", get_local_db(), e)
             raise
 
     def save(self, entity: ConvertedPricePLN) -> int:
-        """
-        Saves a new entity to the JSON database file.
-
-        Args:
-        - entity (ConvertedPricePLN): An instance of ConvertedPricePLN to save
-          in the database.
-        """
+        """Saves a new entity to the JSON database file."""
         if not isinstance(entity, ConvertedPricePLN):
             raise TypeError("Entity must be of type ConvertedPricePLN.")
 
@@ -82,12 +80,7 @@ class JsonFileDatabaseConnector:
         return list(self._data.values())
 
     def get_by_id(self, entity_id: int) -> dict | None:
-        """
-        Retrieves an entity by its ID.
-
-        Args:
-        - entity_id (int): The ID of the entity to retrieve.
-        """
+        """Retrieves an entity by its ID."""
         return self._data.get(str(entity_id), None)
 
     def update(
@@ -135,12 +128,7 @@ class JsonFileDatabaseConnector:
         return f"Currency with id '{entity_id}' was successfully updated."
 
     def delete(self, entity_id: int) -> str:
-        """
-        Deletes a specific currency data record by its ID.
-
-        Args:
-        - entity_id (int): The ID of the currency data record to delete.
-        """
+        """Deletes a specific currency data record by its ID."""
         try:
             del self._data[str(entity_id)]
             self._write_data()

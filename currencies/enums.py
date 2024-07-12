@@ -5,7 +5,7 @@ class CurrencySource(str, Enum):
     """Enum for specifying the source of currency data."""
 
     API_NBP = "api nbp"
-    JSON_FILE = "json file"
+    JSON_FILE = "local database"
 
 
 class DatabaseMapping(str, Enum):

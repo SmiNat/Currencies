@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 from unittest.mock import patch
@@ -48,14 +49,18 @@ SQLITE_DB_INITIAL_DATA = [
         "currency_rate": 5.1234,
         "currency_date": "2024-06-01",
         "price_in_pln": 51.234,
+        "time_created": datetime.datetime.now(),
+        "time_updated": None,
     },
     {
         "id": 2,
-        "amount": 10.0,
-        "currency": "USD",
-        "currency_rate": 4.22,
+        "amount": 5.0,
+        "currency": "ISK",
+        "currency_rate": 2.8562,
         "currency_date": "2020-10-10",
-        "price_in_pln": 42.2,
+        "price_in_pln": 14.28,
+        "time_created": datetime.datetime.now(),
+        "time_updated": None,
     },
 ]
 
@@ -108,6 +113,24 @@ def db_session(monkeypatch):
         db.close()
 
 
+@pytest.fixture
+def sqlite_db_initial_data():
+    """Fixture to populate the test_db.sqlite with initial data."""
+    db = TestingSessionLocal()
+    try:
+        # Insert records into the test_db.sqlite
+        data1 = CurrencyData(**SQLITE_DB_INITIAL_DATA[0])
+        data2 = CurrencyData(**SQLITE_DB_INITIAL_DATA[1])
+
+        db.add_all([data1, data2])
+        db.commit()
+        db.refresh(data1)
+        db.refresh(data2)
+        return data1, data2
+    finally:
+        db.close()
+
+
 @pytest.fixture(autouse=clean_currency_db, scope="function")
 def clean_sqlite_db():
     """Cleans db session for each test."""
@@ -117,28 +140,28 @@ def clean_sqlite_db():
 
 
 @pytest.fixture
-def test_db_path():
+def json_db_path():
     return TEST_DB_JSON_URL
 
 
 @pytest.fixture
-def test_db_content():
+def json_db_content():
     return JSON_DB_INITIAL_DATA
 
 
 @pytest.fixture
-def test_json_db(test_db_path):
+def json_db(json_db_path):
     os.makedirs(TEST_DB_DIR, exist_ok=True)
 
-    with open(test_db_path, "w") as file:
+    with open(json_db_path, "w") as file:
         json.dump(JSON_DB_INITIAL_DATA, file, indent=4)
 
-    with open(test_db_path, "r") as file:
+    with open(json_db_path, "r") as file:
         yield json.load(file)
 
 
 @pytest.fixture(autouse=clean_test_db, scope="function")
-def clean_test_json_db():
+def clean_json_db():
     try:
         yield
     finally:
@@ -173,24 +196,6 @@ def clean_currency_load_db(currency_load_db):
     finally:
         if os.path.exists(TEST_CURRENCY_LOCAL_DB_URL):
             os.remove(TEST_CURRENCY_LOCAL_DB_URL)
-
-
-@pytest.fixture
-def sqlite_db_initial_data():
-    """Fixture to populate the test_db.sqlite with initial data."""
-    db = TestingSessionLocal()
-    try:
-        # Insert records into the test_db.sqlite
-        data1 = CurrencyData(**SQLITE_DB_INITIAL_DATA[0])
-        data2 = CurrencyData(**SQLITE_DB_INITIAL_DATA[1])
-
-        db.add_all([data1, data2])
-        db.commit()
-        db.refresh(data1)
-        db.refresh(data2)
-        return data1, data2
-    finally:
-        db.close()
 
 
 @pytest.fixture()

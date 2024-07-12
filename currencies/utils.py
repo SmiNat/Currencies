@@ -11,7 +11,7 @@ from .exceptions import CurrencyNotFoundError
 class ConvertedPricePLN:
     """Data class representing a converted price in PLN."""
 
-    amount: float | int  # price_in_source_currency
+    amount: float | int  # price in source currency
     currency: str
     currency_rate: float
     currency_date: str

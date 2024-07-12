@@ -48,7 +48,7 @@ def test_validate_date_invalid_type():
 def test_validate_data_source(monkeypatch):
     # Define a mock function to replace get_available_data_sources
     def mock_get_available_data_sources():
-        return ["mock api nbp", "mock json file"]
+        return ["api nbp", "local database"]
 
     # Patch the get_available_data_sources function with the mock function
     monkeypatch.setattr(
@@ -56,14 +56,14 @@ def test_validate_data_source(monkeypatch):
     )
 
     # Valid data test
-    assert validate_data_source("mock api nbp") is None
+    assert validate_data_source("api nbp") is None
 
     # Invalid data test
     with pytest.raises(ValueError) as exc_info:
         validate_data_source("invalid")
     assert (
         "Invalid data source specified. Available sources: "
-        "['mock api nbp', 'mock json file']" in str(exc_info.value)
+        "['api nbp', 'local database']" in str(exc_info.value)
     )
 
 
